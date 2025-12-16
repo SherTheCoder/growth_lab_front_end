@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:growth_lab/shared/presentation/widgets/app_text_field.dart';
+import 'package:growth_lab/shared/presentation/widgets/user_avatar.dart';
 import '../../../profile/presentation/screens/other_user_profile.dart';
 import '../../domain/models.dart';
 import '../providers/comment_action.dart';
@@ -25,7 +27,9 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
     if (text.isEmpty) return;
 
     // 1. Add the comment to the comment list
-    ref.read(commentsProvider(widget.post.id).notifier).addComment(text, widget.post.id);
+    ref
+        .read(commentsProvider(widget.post.id).notifier)
+        .addComment(text, widget.post.id);
 
     // 2. Increment the comment count on the Post itself (in the feed)
     ref.read(feedProvider.notifier).incrementCommentCount(widget.post.id);
@@ -43,14 +47,16 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
     final feedState = ref.watch(feedProvider);
     final livePost = feedState.asData?.value.firstWhere(
           (p) => p.id == widget.post.id,
-      orElse: () => widget.post,
-    ) ?? widget.post;
+          orElse: () => widget.post,
+        ) ??
+        widget.post;
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         leading: BackButton(color: theme.appBarTheme.foregroundColor),
-        title: const Text("Thread", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+        title: const Text("Thread",
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
       ),
       body: Column(
         children: [
@@ -63,41 +69,48 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
                   if (livePost.comments == 0)
                     const SizedBox.shrink()
                   else
-                  commentsState.when(
-                    data: (comments) {
-                      if (comments.isEmpty) {
-                        return const Padding(
-                          padding: EdgeInsets.all(32.0),
-                          child: Center(child: Text("No comments yet.", style: TextStyle(color: Colors.grey))),
-                        );
-                      }
-                      return ListView.separated(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: comments.length,
-                        separatorBuilder: (c, i) => Divider(height: 1, color: theme.dividerColor.withOpacity(0.5)),
-                        itemBuilder: (context, index) {
-                          final comment = comments[index];
-                          // This widget is now defined at the bottom of the file
-                          return CommentItem(
-                            comment: comment,
-                            onReply: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => CommentThreadScreen(parentComment: comment),
-                                ),
-                              );
-                            },
+                    commentsState.when(
+                      data: (comments) {
+                        if (comments.isEmpty) {
+                          return const Padding(
+                            padding: EdgeInsets.all(32.0),
+                            child: Center(
+                                child: Text("No comments yet.",
+                                    style: TextStyle(color: Colors.grey))),
                           );
-                        },
-                      );
-                    },
-                    // Hide loader if we have a count but data is still fetching (optional preference)
-                    // keeping standard loader here for when count > 0 but data is fetching.
-                    loading: () => const Padding(padding: EdgeInsets.all(20), child: Center(child: CircularProgressIndicator())),
-                    error: (err, _) => Center(child: Text("Error: $err")),
-                  ),
+                        }
+                        return ListView.separated(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: comments.length,
+                          separatorBuilder: (c, i) => Divider(
+                              height: 1,
+                              color: theme.dividerColor.withOpacity(0.5)),
+                          itemBuilder: (context, index) {
+                            final comment = comments[index];
+                            // This widget is now defined at the bottom of the file
+                            return CommentItem(
+                              comment: comment,
+                              onReply: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => CommentThreadScreen(
+                                        parentComment: comment),
+                                  ),
+                                );
+                              },
+                            );
+                          },
+                        );
+                      },
+                      // Hide loader if we have a count but data is still fetching (optional preference)
+                      // keeping standard loader here for when count > 0 but data is fetching.
+                      loading: () => const Padding(
+                          padding: EdgeInsets.all(20),
+                          child: Center(child: CircularProgressIndicator())),
+                      error: (err, _) => Center(child: Text("Error: $err")),
+                    ),
                   const SizedBox(height: 80),
                 ],
               ),
@@ -119,25 +132,25 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
       child: SafeArea(
         child: Row(
           children: [
-            const CircleAvatar(
+            UserAvatar(
+              avatarUrl: 'https://i.pravatar.cc/150?u=me',
               radius: 16,
-              backgroundImage: NetworkImage('https://i.pravatar.cc/150?u=me'),
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: TextField(
+              child: AppTextField(
                 controller: _commentController,
-                style: TextStyle(color: theme.textTheme.bodyLarge?.color),
-                decoration: InputDecoration(
-                  hintText: "Write a comment...",
-                  hintStyle: TextStyle(color: theme.colorScheme.secondary),
-                  border: InputBorder.none,
-                ),
+                label: "",
+                isPassword: false,
+                hint: "Write a Comment",
               ),
             ),
             TextButton(
               onPressed: _handleSubmit,
-              child: Text("Post", style: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.bold)),
+              child: Text("Post",
+                  style: TextStyle(
+                      color: theme.colorScheme.primary,
+                      fontWeight: FontWeight.bold)),
             )
           ],
         ),
@@ -173,12 +186,13 @@ class CommentItem extends ConsumerWidget {
             onTap: () {
               Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => OtherUserProfileScreen(user: comment.author))
-              );
+                  MaterialPageRoute(
+                      builder: (_) =>
+                          OtherUserProfileScreen(user: comment.author)));
             },
-            child: CircleAvatar(
+            child: UserAvatar(
               radius: 18,
-              backgroundImage: NetworkImage(comment.author.avatarUrl),
+              avatarUrl: comment.author.avatarUrl,
             ),
           ),
           const SizedBox(width: 12),
@@ -192,20 +206,23 @@ class CommentItem extends ConsumerWidget {
                       onTap: () {
                         Navigator.push(
                             context,
-                            MaterialPageRoute(builder: (_) => OtherUserProfileScreen(user: comment.author))
-                        );
+                            MaterialPageRoute(
+                                builder: (_) => OtherUserProfileScreen(
+                                    user: comment.author)));
                       },
-                      child: Text(
-                          comment.author.name,
-                          style: TextStyle(fontWeight: FontWeight.bold, color: theme.textTheme.bodyLarge?.color, fontSize: 14)
-                      ),
+                      child: Text(comment.author.name,
+                          style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: theme.textTheme.bodyLarge?.color,
+                              fontSize: 14)),
                     ),
                     if (comment.author.isVerified) ...[
                       const SizedBox(width: 4),
                       const Icon(Icons.verified, color: Colors.blue, size: 14),
                     ],
                     const Spacer(),
-                    Text("8d", style: TextStyle(color: Colors.grey, fontSize: 12)),
+                    Text("8d",
+                        style: TextStyle(color: Colors.grey, fontSize: 12)),
                     const SizedBox(width: 10),
                     Icon(Icons.more_horiz, color: Colors.grey, size: 16),
                   ],
@@ -213,7 +230,10 @@ class CommentItem extends ConsumerWidget {
                 const SizedBox(height: 4),
                 Text(
                   comment.content,
-                  style: TextStyle(color: theme.textTheme.bodyLarge?.color?.withOpacity(0.9), fontSize: 14, height: 1.4),
+                  style: TextStyle(
+                      color: theme.textTheme.bodyLarge?.color?.withOpacity(0.9),
+                      fontSize: 14,
+                      height: 1.4),
                 ),
                 const SizedBox(height: 12),
                 Row(
@@ -222,13 +242,20 @@ class CommentItem extends ConsumerWidget {
                     GestureDetector(
                       onTap: () {
                         if (comment.parentCommentId == "0") {
-                          ref.read(commentsProvider(comment.postId).notifier).toggleUpvote(comment.id);
+                          ref
+                              .read(commentsProvider(comment.postId).notifier)
+                              .toggleUpvote(comment.id);
                         } else {
-                          ref.read(repliesProvider(comment.parentCommentId).notifier).toggleUpvote(comment.id);
+                          ref
+                              .read(repliesProvider(comment.parentCommentId)
+                                  .notifier)
+                              .toggleUpvote(comment.id);
                         }
                       },
                       child: SmallAction(
-                        icon: comment.isLiked ? Icons.change_history : Icons.change_history,
+                        icon: comment.isLiked
+                            ? Icons.change_history
+                            : Icons.change_history,
                         label: "${comment.upvotes}",
                         theme: theme,
                         color: comment.isLiked ? Colors.blue : Colors.grey,
@@ -241,9 +268,10 @@ class CommentItem extends ConsumerWidget {
                       onTap: onReply,
                       child: SmallAction(
                           icon: Icons.chat_bubble_outline,
-                          label: comment.replyCount > 0 ? "${comment.replyCount}" : "",
-                          theme: theme
-                      ),
+                          label: comment.replyCount > 0
+                              ? "${comment.replyCount}"
+                              : "",
+                          theme: theme),
                     ),
                     const SizedBox(width: 24),
                     SmallAction(icon: Icons.repeat, label: "", theme: theme),
@@ -253,16 +281,25 @@ class CommentItem extends ConsumerWidget {
                     GestureDetector(
                       onTap: () {
                         if (comment.parentCommentId == "0") {
-                          ref.read(commentsProvider(comment.postId).notifier).toggleBookmark(comment.id);
+                          ref
+                              .read(commentsProvider(comment.postId).notifier)
+                              .toggleBookmark(comment.id);
                         } else {
-                          ref.read(repliesProvider(comment.parentCommentId).notifier).toggleBookmark(comment.id);
+                          ref
+                              .read(repliesProvider(comment.parentCommentId)
+                                  .notifier)
+                              .toggleBookmark(comment.id);
                         }
                       },
                       child: SmallAction(
-                        icon: comment.isBookmarked ? Icons.bookmark : Icons.bookmark_border,
+                        icon: comment.isBookmarked
+                            ? Icons.bookmark
+                            : Icons.bookmark_border,
                         label: "",
                         theme: theme,
-                        color: comment.isBookmarked ? theme.textTheme.bodyLarge?.color : Colors.grey,
+                        color: comment.isBookmarked
+                            ? theme.textTheme.bodyLarge?.color
+                            : Colors.grey,
                       ),
                     ),
                   ],

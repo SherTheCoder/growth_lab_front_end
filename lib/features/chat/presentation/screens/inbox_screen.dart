@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:growth_lab/shared/presentation/widgets/user_avatar.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../domain/chat_models.dart';
 import '../providers/chat_providers.dart';
@@ -68,10 +69,7 @@ class InboxScreen extends ConsumerWidget {
                     ),
                   );
                 },
-                leading: CircleAvatar(
-                  radius: 24,
-                  backgroundImage: NetworkImage(otherUser.avatarUrl),
-                ),
+                leading: UserAvatar(radius: 24, avatarUrl: otherUser.avatarUrl),
                 title: Row(
                   children: [
                     Expanded(

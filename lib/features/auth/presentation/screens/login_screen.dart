@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:growth_lab/shared/presentation/widgets/app_text_field.dart';
 import '../providers/auth_provider.dart';
 import 'signup_screen.dart';
 
@@ -14,11 +15,31 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
 
-  void _handleLogin() {
-    ref.read(authProvider.notifier).login(
+  void _handleLogin() async {
+    // 1. Call the login method and await its completion
+    await ref.read(authProvider.notifier).login(
       _emailController.text,
       _passwordController.text,
     );
+
+    // 2. Check if the widget is still mounted before using context
+    if (mounted) {
+      final authState = ref.read(authProvider);
+
+      // 3. If the state has an error, show a SnackBar
+      if (authState.hasError) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              // Clean up "Exception: " prefix if present
+              authState.error.toString().replaceAll('Exception: ', ''),
+              style: const TextStyle(color: Colors.white),
+            ),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -41,31 +62,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               const SizedBox(height: 60),
 
               // Email
-              TextField(
-                controller: _emailController,
-                style: const TextStyle(color: Colors.white),
-                decoration: const InputDecoration(
-                  labelText: "Email or handle",
-                  labelStyle: TextStyle(color: Colors.grey),
-                  enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey)),
-                  focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white)),
-                ),
-              ),
+              AppTextField(controller: _emailController, label: "email or handle", isPassword: false),
+
               const SizedBox(height: 20),
 
               // Password
-              TextField(
-                controller: _passwordController,
-                obscureText: true,
-                style: const TextStyle(color: Colors.white),
-                decoration: const InputDecoration(
-                  labelText: "Password",
-                  labelStyle: TextStyle(color: Colors.grey),
-                  suffixIcon: Icon(Icons.visibility_off, color: Colors.grey),
-                  enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey)),
-                  focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white)),
-                ),
-              ),
+              AppTextField(controller: _passwordController, label: "password", isPassword: true),
 
               const SizedBox(height: 10),
               Align(

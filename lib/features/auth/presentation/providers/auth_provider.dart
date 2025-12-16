@@ -1,15 +1,26 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:growth_lab/core/models/user_model.dart';
 import '../../data/auth_repository.dart';
-import '../../../feed/domain/models.dart';
 
 final authRepositoryProvider = Provider((ref) => AuthRepository());
 
-// Holds the current authenticated User (or null if logged out)
 class AuthNotifier extends StateNotifier<AsyncValue<User?>> {
   final AuthRepository _repository;
 
-  AuthNotifier(this._repository) : super(const AsyncValue.data(null));
+  AuthNotifier(this._repository) : super(const AsyncValue.loading()) {
+    _checkLoginStatus(); // Check for existing token on startup
+  }
 
+  Future<void> _checkLoginStatus() async {
+    try {
+      final user = await _repository.restoreSession();
+      state = AsyncValue.data(user);
+    } catch (e) {
+      state = const AsyncValue.data(null);
+    }
+  }
+
+  // ... login and signUp methods remain similar, just ensuring they call the updated repository methods ...
   Future<void> login(String email, String password) async {
     state = const AsyncValue.loading();
     try {
@@ -29,16 +40,16 @@ class AuthNotifier extends StateNotifier<AsyncValue<User?>> {
   }) async {
     state = const AsyncValue.loading();
     try {
-      await _repository.sendVerificationEmail(email);
       // For demo purposes, we auto-login after "verification"
       final user = await _repository.completeSignup(email, phone, password, firstName, lastName);
-      state = AsyncValue.data(user);
+      state = const AsyncValue.data(null);
     } catch (e, st) {
       state = AsyncValue.error(e, st);
     }
   }
 
-  void logout() {
+  void logout() async {
+    await _repository.logout();
     state = const AsyncValue.data(null);
   }
 }

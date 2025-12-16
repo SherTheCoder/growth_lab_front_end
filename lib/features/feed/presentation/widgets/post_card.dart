@@ -4,6 +4,7 @@ import '../../../profile/presentation/screens/other_user_profile.dart';
 import '../../domain/models.dart';
 import '../providers/feed_provider.dart';
 import '../screens/post_detail_screen.dart';
+import 'package:growth_lab/shared/presentation/widgets/user_avatar.dart';
 
 class PostCard extends ConsumerStatefulWidget {
   final Post post;
@@ -24,7 +25,9 @@ class _PostCardState extends ConsumerState<PostCard> {
 
     return Container(
       decoration: BoxDecoration(
-        border: Border(bottom: BorderSide(color: theme.dividerColor.withOpacity(0.1), width: 0.5)),
+        border: Border(
+            bottom: BorderSide(
+                color: theme.dividerColor.withOpacity(0.1), width: 0.5)),
       ),
       padding: const EdgeInsets.symmetric(vertical: 12),
       child: Column(
@@ -54,13 +57,11 @@ class _PostCardState extends ConsumerState<PostCard> {
             onTap: () {
               Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => OtherUserProfileScreen(user: post.author))
-              );
+                  MaterialPageRoute(
+                      builder: (_) =>
+                          OtherUserProfileScreen(user: post.author)));
             },
-            child: CircleAvatar(
-              radius: 20,
-              backgroundImage: NetworkImage(post.author.avatarUrl),
-            ),
+            child: UserAvatar(avatarUrl: post.author.avatarUrl, radius: 20),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -74,8 +75,9 @@ class _PostCardState extends ConsumerState<PostCard> {
                         onTap: () {
                           Navigator.push(
                               context,
-                              MaterialPageRoute(builder: (_) => OtherUserProfileScreen(user: post.author))
-                          );
+                              MaterialPageRoute(
+                                  builder: (_) => OtherUserProfileScreen(
+                                      user: post.author)));
                         },
                         child: Text(
                           post.author.name,
@@ -97,7 +99,8 @@ class _PostCardState extends ConsumerState<PostCard> {
                 const SizedBox(height: 2),
                 Text(
                   "${post.author.headline} • ${post.author.location}",
-                  style: TextStyle(color: theme.colorScheme.secondary, fontSize: 12),
+                  style: TextStyle(
+                      color: theme.colorScheme.secondary, fontSize: 12),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -129,14 +132,19 @@ class _PostCardState extends ConsumerState<PostCard> {
         children: [
           Text(
             displayText,
-            style: TextStyle(color: theme.textTheme.bodyMedium?.color, fontSize: 15, height: 1.4),
+            style: TextStyle(
+                color: theme.textTheme.bodyMedium?.color,
+                fontSize: 15,
+                height: 1.4),
           ),
           if (isLongText && !isExpanded)
             GestureDetector(
               onTap: () => setState(() => isExpanded = true),
               child: Text(
                 "Show more",
-                style: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.w500),
+                style: TextStyle(
+                    color: theme.colorScheme.primary,
+                    fontWeight: FontWeight.w500),
               ),
             ),
         ],
@@ -222,10 +230,13 @@ class _PostCardState extends ConsumerState<PostCard> {
           IconButton(
             icon: Icon(
               post.isBookmarked ? Icons.bookmark : Icons.bookmark_border,
-              color: post.isBookmarked ? theme.textTheme.bodyLarge?.color : iconColor,
+              color: post.isBookmarked
+                  ? theme.textTheme.bodyLarge?.color
+                  : iconColor,
               size: 22,
             ),
-            onPressed: () => ref.read(feedProvider.notifier).toggleBookmark(post.id),
+            onPressed: () =>
+                ref.read(feedProvider.notifier).toggleBookmark(post.id),
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(),
           ),
@@ -276,7 +287,8 @@ class _FollowButton extends StatelessWidget {
   final VoidCallback onTap;
   final ThemeData theme;
 
-  const _FollowButton({required this.isFollowing, required this.onTap, required this.theme});
+  const _FollowButton(
+      {required this.isFollowing, required this.onTap, required this.theme});
 
   @override
   Widget build(BuildContext context) {
@@ -286,7 +298,9 @@ class _FollowButton extends StatelessWidget {
     // For specific "Growth Lab" style:
     // Dark Mode: White text, white border
     // Light Mode: Black text, black border
-    final color = isFollowing ? theme.textTheme.bodyLarge?.color : theme.colorScheme.primary;
+    final color = isFollowing
+        ? theme.textTheme.bodyLarge?.color
+        : theme.colorScheme.primary;
     final borderColor = theme.dividerColor.withOpacity(0.5);
 
     return GestureDetector(
@@ -294,8 +308,10 @@ class _FollowButton extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: isFollowing ? theme.scaffoldBackgroundColor : Colors.transparent,
-          border: Border.all(color: isFollowing ? borderColor : (color ?? Colors.blue)),
+          color:
+              isFollowing ? theme.scaffoldBackgroundColor : Colors.transparent,
+          border: Border.all(
+              color: isFollowing ? borderColor : (color ?? Colors.blue)),
           borderRadius: BorderRadius.circular(20),
         ),
         child: Text(

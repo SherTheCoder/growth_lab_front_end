@@ -13,6 +13,7 @@ class CreatePostScreen extends ConsumerStatefulWidget {
 
 class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
   final _textController = TextEditingController();
+  bool _isPosting = false; // Local state to track loading
 
   void _post() async {
     final text = _textController.text.trim();
@@ -21,22 +22,43 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
     final user = ref.read(authProvider).value;
     if (user == null) return;
 
-    // Create the Post object
-    final newPost = Post(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      author: user,
-      content: text,
-      type: PostContentType.text,
-      timestamp: DateTime.now(),
-      isFollowing: true, // IMPORTANT: Set true so it appears in "Following" tab
-    );
+    setState(() {
+      _isPosting = true;
+    });
 
-    // Call Provider
-    await ref.read(feedProvider.notifier).addPost(newPost);
+    try {
+      // Create a temporary Post object to carry the data.
+      // The Backend will ignore the ID, Timestamp, and Author fields and generate real ones.
+      final draftPost = Post(
+        id: '', // Ignored by Repo
+        author: user, // Ignored by Repo (Backend uses token to identify author)
+        content: text,
+        type: PostContentType.text,
+        timestamp: DateTime.now(), // Ignored by Repo
+        isFollowing: true,
+      );
 
-    if (mounted) {
-      Navigator.pop(context);
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Posted successfully!")));
+      // Call Provider (which calls Repository -> API)
+      await ref.read(feedProvider.notifier).addPost(draftPost);
+
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Posted successfully!")),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Failed to post: ${e.toString()}")),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isPosting = false;
+        });
+      }
     }
   }
 
@@ -51,10 +73,26 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
-          TextButton(
-            onPressed: _post,
-            child: const Text("Post", style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold, fontSize: 16)),
-          )
+          // Show Spinner if posting, otherwise show Button
+          if (_isPosting)
+            const Padding(
+              padding: EdgeInsets.only(right: 16.0),
+              child: Center(
+                child: SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.blue),
+                ),
+              ),
+            )
+          else
+            TextButton(
+              onPressed: _post,
+              child: const Text(
+                  "Post",
+                  style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold, fontSize: 16)
+              ),
+            )
         ],
       ),
       body: Padding(
@@ -70,6 +108,7 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
                 hintStyle: TextStyle(color: Colors.grey),
                 border: InputBorder.none,
               ),
+              enabled: !_isPosting, // Disable input while posting
             ),
             const Spacer(),
             Row(

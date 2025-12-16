@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:growth_lab/shared/presentation/widgets/app_text_field.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
-import '../../../feed/domain/models.dart';
+import 'package:growth_lab/core/models/user_model.dart';
 import '../../domain/chat_models.dart';
 import '../providers/chat_providers.dart';
+import 'package:growth_lab/shared/presentation/widgets/user_avatar.dart';
 
 class ChatScreen extends ConsumerStatefulWidget {
   final String conversationId;
@@ -61,10 +63,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         leading: BackButton(color: Colors.white),
         title: Row(
           children: [
-            CircleAvatar(
-              radius: 16,
-              backgroundImage: NetworkImage(widget.otherUser.avatarUrl),
-            ),
+            UserAvatar(radius: 16, avatarUrl: widget.otherUser.avatarUrl,),
             const SizedBox(width: 10),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -150,15 +149,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                   color: Colors.grey[900],
                   borderRadius: BorderRadius.circular(24),
                 ),
-                child: TextField(
-                  controller: _textController,
-                  style: const TextStyle(color: Colors.white),
-                  decoration: const InputDecoration(
-                    hintText: "Message...",
-                    hintStyle: TextStyle(color: Colors.grey),
-                    border: InputBorder.none,
-                  ),
-                ),
+                child: AppTextField(controller: _textController, label: "Message...", isPassword: false),
               ),
             ),
             const SizedBox(width: 8),

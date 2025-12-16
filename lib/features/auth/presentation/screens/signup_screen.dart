@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:growth_lab/shared/presentation/widgets/app_text_field.dart';
 import '../providers/auth_provider.dart';
 
 class SignUpScreen extends ConsumerStatefulWidget {
@@ -27,16 +28,46 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
     }
   }
 
-  void _submitSignUp() {
-    ref.read(authProvider.notifier).signUp(
+  void _submitSignUp() async {
+    // 1. Trigger the signup (this sets state to loading)
+    await ref.read(authProvider.notifier).signUp(
       firstName: _firstNameController.text,
       lastName: _lastNameController.text,
       email: _emailController.text,
       phone: _phoneController.text,
       password: _passwordController.text,
     );
-    // On success, the authProvider state change will trigger the MainWrapper to show the Feed
-    Navigator.popUntil(context, (route) => route.isFirst);
+
+    // 2. Check the result
+    final authState = ref.read(authProvider);
+
+    if (authState.hasError) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Error: ${authState.error}")),
+        );
+      }
+    } else {
+      // 3. Success: Show confirmation and go back to login
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text("Account Created"),
+            content: const Text("Please check your email to verify your account before logging in."),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(ctx); // Close Dialog
+                  Navigator.popUntil(context, (route) => route.isFirst); // Go to Login
+                },
+                child: const Text("OK"),
+              )
+            ],
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -132,17 +163,6 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
   }
 
   Widget _buildTextField(String label, TextEditingController controller, {bool isPassword = false}) {
-    return TextField(
-      controller: controller,
-      obscureText: isPassword,
-      style: const TextStyle(color: Colors.white),
-      decoration: InputDecoration(
-        labelText: label,
-        labelStyle: const TextStyle(color: Colors.grey),
-        enabledBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey)),
-        focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Colors.white)),
-        suffixIcon: isPassword ? const Icon(Icons.visibility_off, color: Colors.grey) : null,
-      ),
-    );
+    return AppTextField(controller: controller, label: label, isPassword: isPassword);
   }
 }

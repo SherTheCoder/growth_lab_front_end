@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:growth_lab/shared/presentation/widgets/user_avatar.dart';
 import '../../../chat/presentation/screens/chat_screen.dart';
-import '../../../feed/domain/models.dart';
+import 'package:growth_lab/core/models/user_model.dart';
 import '../../../feed/presentation/providers/feed_provider.dart';
 import '../../../feed/presentation/widgets/post_card.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
@@ -81,10 +82,7 @@ class OtherUserProfileScreen extends ConsumerWidget {
                             color: Colors.black,
                             shape: BoxShape.circle,
                           ),
-                          child: CircleAvatar(
-                            radius: 45,
-                            backgroundImage: NetworkImage(user.avatarUrl),
-                          ),
+                          child: UserAvatar(avatarUrl: user.avatarUrl, radius: 45,),
                         ),
                       ),
                       Transform.translate(

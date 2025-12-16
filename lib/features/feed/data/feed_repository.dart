@@ -1,148 +1,163 @@
+import 'package:dio/dio.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import '../../../core/models/user_model.dart';
 import '../domain/models.dart';
 
-// --- SHARED MOCK DATA STORE ---
-final List<Post> _globalPosts = [
-  Post(
-    id: 'p1',
-    author: const User(
-        id: 'u1',
-        name: 'Sabeen Sohail',
-        username: '@sabeen',
-        avatarUrl: 'https://i.pravatar.cc/150?u=sabeen',
-        headline: 'Founder',
-        location: 'Pakistan',
-        isVerified: true),
-    content: "💙 Insights from the Community...",
-    type: PostContentType.text,
-    timestamp: DateTime.now().subtract(const Duration(hours: 10)),
-    upvotes: 5,
-    comments: 2,
-    reposts: 0,
-  ),
-];
-
-final List<Comment> _globalComments = [
-Comment(
-  id: 'c_new_1',
-  postId: 'p1', // ID of the post it belongs to
-  author: const User(
-    id: 'u_new_1',
-    name: 'Sarah Jenkins',
-    username: '@sarahj',
-    avatarUrl: 'https://i.pravatar.cc/150?u=sarah',
-    headline: 'Tech Lead',
-    location: 'Canada',
-    isVerified: true,
-  ),
-  content: "This is exactly the kind of innovation we need right now. Great work!",
-  timestamp: DateTime.now().subtract(const Duration(minutes: 45)),
-  upvotes: 15,
-  replyCount: 0,
-  isLiked: true,
-  isBookmarked: false,
-  parentCommentId: "0", // "0" indicates it is a top-level comment
-),
-Comment(
-  id: 'c_new_2',
-  postId: 'p1',
-  author: const User(
-    id: 'u_new_2',
-    name: 'David Chen',
-    username: '@dchen',
-    avatarUrl: 'https://i.pravatar.cc/150?u=david',
-    headline: 'Investor',
-    location: 'Singapore',
-    isVerified: false,
-  ),
-  content: "Could you elaborate on the second point? I find that fascinating.",
-  timestamp: DateTime.now().subtract(const Duration(minutes: 10)),
-  upvotes: 3,
-  replyCount: 0,
-  isLiked: false,
-  isBookmarked: true,
-  parentCommentId: "c1", // ID of the comment being replied to
-)
-];
-
 class FeedRepository {
+  // Use 10.0.2.2 for Android Emulator, localhost for iOS Simulator
+  final Dio _dio = Dio(BaseOptions(baseUrl: 'http://10.0.2.2:8000'));
+  final _storage = const FlutterSecureStorage();
+
+  // Helper to get headers with Auth Token
+  Future<Options> _getOptions() async {
+    final token = await _storage.read(key: 'auth_token');
+    return Options(
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+    );
+  }
+
+  // --- POSTS ---
+
   Future<List<Post>> fetchPosts() async {
-    await Future.delayed(const Duration(milliseconds: 500));
-    return List.from(_globalPosts);
+    try {
+      final options = await _getOptions();
+      // Assumes GET /posts returns a list of post objects
+      final response = await _dio.get('/posts', options: options);
+
+      return (response.data as List)
+          .map((json) => Post.fromJson(json))
+          .toList();
+    } catch (e) {
+      throw Exception("Failed to fetch posts: $e");
+    }
   }
 
   Future<Post> addPost(Post post) async {
-    await Future.delayed(const Duration(milliseconds: 500));
-    _globalPosts.insert(0, post);
-    return post;
+    try {
+      final options = await _getOptions();
+      // We send the content and type. The backend should handle ID, timestamp, and author.
+      final response = await _dio.post('/posts', data: {
+        'content': post.content,
+        'type': post.type.name,
+        'media_urls': post.mediaUrls,
+      }, options: options);
+
+      return Post.fromJson(response.data);
+    } catch (e) {
+      throw Exception("Failed to create post: $e");
+    }
   }
 
-  // --- NEW: Interaction Methods ---
+  // --- INTERACTIONS ---
 
   Future<void> toggleLike(String postId) async {
-    final index = _globalPosts.indexWhere((p) => p.id == postId);
-    if (index != -1) {
-      final post = _globalPosts[index];
-      final isLiked = !post.isLiked;
-      _globalPosts[index] = post.copyWith(
-        isLiked: isLiked,
-        upvotes: post.upvotes + (isLiked ? 1 : -1),
-      );
+    try {
+      final options = await _getOptions();
+      await _dio.post('/posts/$postId/like', options: options);
+    } catch (e) {
+      throw Exception("Failed to like post: $e");
     }
   }
 
   Future<void> toggleBookmark(String postId) async {
-    final index = _globalPosts.indexWhere((p) => p.id == postId);
-    if (index != -1) {
-      final post = _globalPosts[index];
-      _globalPosts[index] = post.copyWith(isBookmarked: !post.isBookmarked);
+    try {
+      final options = await _getOptions();
+      await _dio.post('/posts/$postId/bookmark', options: options);
+    } catch (e) {
+      throw Exception("Failed to bookmark post: $e");
     }
   }
 
   Future<void> toggleFollow(String postId) async {
-    final index = _globalPosts.indexWhere((p) => p.id == postId);
-    if (index != -1) {
-      final post = _globalPosts[index];
-      _globalPosts[index] = post.copyWith(isFollowing: !post.isFollowing);
+    try {
+      final options = await _getOptions();
+      // Assuming you follow the AUTHOR of the post
+      await _dio.post('/posts/$postId/follow_author', options: options);
+    } catch (e) {
+      throw Exception("Failed to follow user: $e");
     }
   }
 
   Future<void> incrementCommentCount(String postId) async {
-    final index = _globalPosts.indexWhere((p) => p.id == postId);
-    if (index != -1) {
-      final post = _globalPosts[index];
-      _globalPosts[index] = post.copyWith(comments: post.comments + 1);
+    // Usually handled by the backend automatically when a comment is added.
+    // We can leave this empty or remove it if the UI updates optimistically.
+  }
+
+  // --- COMMENTS ---
+
+  Future<List<Comment>> fetchComments(String postId) async {
+    try {
+      final options = await _getOptions();
+      final response = await _dio.get('/posts/$postId/comments', options: options);
+
+      return (response.data as List)
+          .map((json) => Comment.fromJson(json))
+          .toList();
+    } catch (e) {
+      // Return empty list on error or handle differently
+      return [];
     }
   }
 
-  // --- Comments Logic ---
-
-  Future<List<Comment>> fetchComments(String postId) async {
-    await Future.delayed(const Duration(milliseconds: 500));
-    return _globalComments.where((c) => c.postId == postId && c.parentCommentId == "0").toList();
-  }
-
   Future<List<Comment>> fetchReplies(String commentId) async {
-    await Future.delayed(const Duration(milliseconds: 500));
-    return _globalComments.where((c) => c.parentCommentId == commentId).toList();
+    try {
+      final options = await _getOptions();
+      final response = await _dio.get('/comments/$commentId/replies', options: options);
+
+      return (response.data as List)
+          .map((json) => Comment.fromJson(json))
+          .toList();
+    } catch (e) {
+      return [];
+    }
   }
 
   Future<List<Comment>> fetchRepliesByUser(String userId) async {
-    await Future.delayed(const Duration(milliseconds: 500));
-    return _globalComments.where((c) => c.author.id == userId).toList();
+    try {
+      final options = await _getOptions();
+      final response = await _dio.get('/users/$userId/replies', options: options);
+
+      return (response.data as List)
+          .map((json) => Comment.fromJson(json))
+          .toList();
+    } catch (e) {
+      return [];
+    }
   }
 
   Future<Comment> addComment(String postId, String content, String parentId, User author) async {
-    await Future.delayed(const Duration(milliseconds: 500));
-    final newComment = Comment(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      postId: postId,
-      author: author,
-      content: content,
-      timestamp: DateTime.now(),
-      parentCommentId: parentId,
-      replyCount: 0,
-    );
-    _globalComments.add(newComment);
-    return newComment;
+    try {
+      final options = await _getOptions();
+      // parentId "0" means top-level comment
+      final response = await _dio.post('/posts/$postId/comments', data: {
+        'content': content,
+        'parent_comment_id': parentId == "0" ? null : parentId,
+      }, options: options);
+
+      return Comment.fromJson(response.data);
+    } catch (e) {
+      throw Exception("Failed to add comment: $e");
+    }
+  }
+
+  Future<void> toggleCommentLike(String commentId) async {
+    try {
+      final options = await _getOptions();
+      await _dio.post('/comments/$commentId/like', options: options);
+    } catch (e) {
+      throw Exception("Failed to like comment: $e");
+    }
+  }
+
+  Future<void> toggleCommentBookmark(String commentId) async {
+    try {
+      final options = await _getOptions();
+      await _dio.post('/comments/$commentId/bookmark', options: options);
+    } catch (e) {
+      throw Exception("Failed to bookmark comment: $e");
+    }
   }
 }

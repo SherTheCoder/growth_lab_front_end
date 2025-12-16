@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:growth_lab/shared/presentation/widgets/user_avatar.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../feed/presentation/providers/feed_provider.dart';
 import '../../../feed/presentation/widgets/post_card.dart';
@@ -38,10 +39,8 @@ class ProfileScreen extends ConsumerWidget {
                         Positioned(
                           bottom: 0,
                           left: 16,
-                          child: CircleAvatar(
-                            radius: 40,
-                            backgroundImage: NetworkImage(user.avatarUrl),
-                          ),
+                          child: UserAvatar(avatarUrl: user.avatarUrl, radius: 40,),
+
                         ),
                       ],
                     ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../../feed/domain/models.dart';
+import 'package:growth_lab/core/models/user_model.dart';
+import 'package:growth_lab/shared/presentation/widgets/user_avatar.dart';
 import '../../../profile/presentation/screens/other_user_profile.dart';
 
 class SearchScreen extends StatelessWidget {
@@ -57,7 +58,7 @@ class SearchScreen extends StatelessWidget {
                         MaterialPageRoute(builder: (_) => OtherUserProfileScreen(user: user))
                     );
                   },
-                  leading: CircleAvatar(backgroundImage: NetworkImage(user.avatarUrl)),
+                  leading: UserAvatar(avatarUrl: user.avatarUrl),
                   title: Row(
                     children: [
                       Text(user.name, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),

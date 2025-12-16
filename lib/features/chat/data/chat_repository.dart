@@ -1,5 +1,5 @@
 import '../domain/chat_models.dart';
-import '../../feed/domain/models.dart';
+import 'package:growth_lab/core/models/user_model.dart';
 
 // --- MOCK DATA ---
 final List<Conversation> _globalConversations = [];

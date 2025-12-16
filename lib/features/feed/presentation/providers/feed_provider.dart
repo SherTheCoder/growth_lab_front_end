@@ -23,71 +23,83 @@ class FeedNotifier extends StateNotifier<AsyncValue<List<Post>>> {
   }
 
   Future<void> addPost(Post post) async {
-    state.whenData((currentPosts) {
-      state = AsyncValue.data([post, ...currentPosts]);
-    });
+    // We assume the UI shows a loading state or waits for this Future to complete.
+    // We send the post to the backend first to get the real ID and Timestamp.
     try {
-      await _repository.addPost(post);
+      final newPost = await _repository.addPost(post);
+
+      // Add the real returned post to the top of the list
+      state.whenData((currentPosts) {
+        state = AsyncValue.data([newPost, ...currentPosts]);
+      });
     } catch (e) {
-      // Handle error
+      // You might want to rethrow or handle the error so the UI shows a snackbar
+      rethrow;
     }
   }
 
-  // --- RESTORED INTERACTION METHODS ---
+  // --- INTERACTION METHODS WITH ERROR HANDLING ---
 
-  void toggleUpvote(String postId) {
-    // 1. Update UI Immediately
-    state.whenData((posts) {
-      state = AsyncValue.data(posts.map((post) {
-        if (post.id == postId) {
-          final isUpvoting = !post.isLiked;
-          return post.copyWith(
-            isLiked: isUpvoting,
-            upvotes: post.upvotes + (isUpvoting ? 1 : -1),
-          );
-        }
-        return post;
-      }).toList());
+  Future<void> toggleUpvote(String postId) async {
+    // 1. Optimistic Update (Immediate UI feedback)
+    _updatePostLocally(postId, (post) {
+      final isUpvoting = !post.isLiked;
+      return post.copyWith(
+        isLiked: isUpvoting,
+        upvotes: post.upvotes + (isUpvoting ? 1 : -1),
+      );
     });
 
-    // 2. Update Repository (Global Store)
-    _repository.toggleLike(postId);
+    try {
+      // 2. Network Call
+      await _repository.toggleLike(postId);
+    } catch (e) {
+      // 3. Revert on Failure
+      _updatePostLocally(postId, (post) {
+        final wasUpvoting = post.isLiked; // The state we just switched TO
+        return post.copyWith(
+          isLiked: !wasUpvoting, // Switch back
+          upvotes: post.upvotes + (!wasUpvoting ? 1 : -1),
+        );
+      });
+    }
   }
 
-  void toggleFollow(String postId) {
-    state.whenData((posts) {
-      state = AsyncValue.data(posts.map((post) {
-        if (post.id == postId) {
-          return post.copyWith(isFollowing: !post.isFollowing);
-        }
-        return post;
-      }).toList());
-    });
-    _repository.toggleFollow(postId);
+  Future<void> toggleFollow(String postId) async {
+    _updatePostLocally(postId, (post) => post.copyWith(isFollowing: !post.isFollowing));
+    try {
+      await _repository.toggleFollow(postId);
+    } catch (e) {
+      // Revert
+      _updatePostLocally(postId, (post) => post.copyWith(isFollowing: !post.isFollowing));
+    }
   }
 
-  void toggleBookmark(String postId) {
-    state.whenData((posts) {
-      state = AsyncValue.data(posts.map((post) {
-        if (post.id == postId) {
-          return post.copyWith(isBookmarked: !post.isBookmarked);
-        }
-        return post;
-      }).toList());
-    });
-    _repository.toggleBookmark(postId);
+  Future<void> toggleBookmark(String postId) async {
+    _updatePostLocally(postId, (post) => post.copyWith(isBookmarked: !post.isBookmarked));
+    try {
+      await _repository.toggleBookmark(postId);
+    } catch (e) {
+      // Revert
+      _updatePostLocally(postId, (post) => post.copyWith(isBookmarked: !post.isBookmarked));
+    }
   }
 
   void incrementCommentCount(String postId) {
+    // Simple local update, assuming success
+    _updatePostLocally(postId, (post) => post.copyWith(comments: post.comments + 1));
+  }
+
+  // Helper to reduce boilerplate
+  void _updatePostLocally(String postId, Post Function(Post) transform) {
     state.whenData((posts) {
       state = AsyncValue.data(posts.map((post) {
         if (post.id == postId) {
-          return post.copyWith(comments: post.comments + 1);
+          return transform(post);
         }
         return post;
       }).toList());
     });
-    _repository.incrementCommentCount(postId);
   }
 }
 

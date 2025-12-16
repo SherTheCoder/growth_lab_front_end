@@ -1,4 +1,4 @@
-import '../../feed/domain/models.dart'; // To use the User model
+import 'package:growth_lab/core/models/user_model.dart';
 
 class Message {
   final String id;

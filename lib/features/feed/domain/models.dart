@@ -1,26 +1,16 @@
+import 'package:growth_lab/core/models/user_model.dart';
+
 /// Represents the type of content in a post
 enum PostContentType { text, image, carousel, video }
 
 /// Domain model for a User
-class User {
-  final String id;
-  final String name;
-  final String username;
-  final String avatarUrl;
-  final String headline;
-  final String location;
-  final bool isVerified;
 
-  const User({
-    required this.id,
-    required this.name,
-    required this.username,
-    required this.avatarUrl,
-    required this.headline,
-    required this.location,
-    this.isVerified = false,
-  });
-}
+
+/// Domain model for a Feed Post
+// ... inside lib/features/feed/domain/models.dart
+
+// 1. Update PostContentType to handle String parsing if needed,
+// or you can handle it inside the Post.fromJson
 
 /// Domain model for a Feed Post
 class Post {
@@ -54,6 +44,30 @@ class Post {
     this.isFollowing = false,
   });
 
+  factory Post.fromJson(Map<String, dynamic> json) {
+    return Post(
+      id: json['id'] as String,
+      // Ensure the 'author' field in JSON is a full user object, or adapt accordingly
+      author: User.fromJson(json['author'] as Map<String, dynamic>),
+      content: json['content'] as String,
+      // Simple parsing assuming backend sends "text", "image", etc.
+      type: PostContentType.values.firstWhere(
+              (e) => e.name == (json['type'] as String),
+          orElse: () => PostContentType.text
+      ),
+      mediaUrls: (json['media_urls'] as List<dynamic>?)?.map((e) => e as String).toList() ?? [],
+      timestamp: DateTime.parse(json['timestamp'] as String),
+      upvotes: json['upvotes'] ?? 0,
+      comments: json['comments'] ?? 0,
+      reposts: json['reposts'] ?? 0,
+      isLiked: json['is_liked'] ?? false,
+      isBookmarked: json['is_bookmarked'] ?? false,
+      isFollowing: json['is_following'] ?? false,
+    );
+  }
+
+  // Optional: toJson if you need to send a full post object back (rare for feeds)
+  // copyWith remains the same...
   Post copyWith({
     String? id,
     User? author,
@@ -88,18 +102,16 @@ class Post {
 /// Domain model for a Comment
 class Comment {
   final String id;
-  final String postId; // The ID of the root post
+  final String postId;
   final User author;
   final String content;
   final DateTime timestamp;
 
   final int upvotes;
-  final int replyCount; // Number of replies to this comment
+  final int replyCount;
   final bool isLiked;
   final bool isBookmarked;
-
-  // Threading logic
-  final String parentCommentId; // "0" if top-level, otherwise the ID of the comment being replied to
+  final String parentCommentId;
 
   const Comment({
     required this.id,
@@ -114,6 +126,22 @@ class Comment {
     this.parentCommentId = "0",
   });
 
+  factory Comment.fromJson(Map<String, dynamic> json) {
+    return Comment(
+      id: json['id'] as String,
+      postId: json['post_id'] as String,
+      author: User.fromJson(json['author'] as Map<String, dynamic>),
+      content: json['content'] as String,
+      timestamp: DateTime.parse(json['timestamp'] as String),
+      upvotes: json['upvotes'] ?? 0,
+      replyCount: json['reply_count'] ?? 0,
+      isLiked: json['is_liked'] ?? false,
+      isBookmarked: json['is_bookmarked'] ?? false,
+      parentCommentId: json['parent_comment_id']?.toString() ?? "0",
+    );
+  }
+
+  // copyWith remains the same...
   Comment copyWith({
     String? id,
     String? postId,

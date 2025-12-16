@@ -1,23 +1,22 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../profile/presentation/providers/profile_providers.dart';
 import '../../data/feed_repository.dart';
 import '../../domain/models.dart';
 import 'feed_provider.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
-import '../../../profile/presentation/providers/profile_providers.dart'; // Import profile providers
+import '../../../profile/presentation/providers/profile_providers.dart';
 
 class CommentNotifier extends StateNotifier<AsyncValue<List<Comment>>> {
   final FeedRepository _repository;
   final String entityId;
   final bool isReplyThread;
-  final Ref ref; // Needed to invalidate other providers
+  final Ref ref;
 
   CommentNotifier(this._repository, this.entityId, this.ref, {this.isReplyThread = false})
       : super(const AsyncValue.loading()) {
     loadComments();
   }
+
   void _sortComments(List<Comment> comments) {
-    // Sort by upvotes descending
     comments.sort((a, b) => b.upvotes.compareTo(a.upvotes));
   }
 
@@ -36,53 +35,85 @@ class CommentNotifier extends StateNotifier<AsyncValue<List<Comment>>> {
     }
   }
 
-  // UPDATED: Add Comment
   Future<void> addComment(String content, String postId, {String parentId = "0"}) async {
-    // 1. Get Current User (Required for the author field)
     final user = ref.read(authProvider).value;
     if (user == null) return;
 
-    // 2. Add to Repository
-    final newComment = await _repository.addComment(postId, content, parentId, user);
+    try {
+      // 1. Call Backend
+      final newComment = await _repository.addComment(postId, content, parentId, user);
 
-    // 3. Update Local State (The list currently being viewed)
-    state.whenData((comments) {
-      state = AsyncValue.data([...comments, newComment]);
-    });
+      // 2. Update Local State
+      state.whenData((comments) {
+        final updatedList = [...comments, newComment];
+        _sortComments(updatedList);
+        state = AsyncValue.data(updatedList);
+      });
 
-    // 4. *** CRITICAL FIX ***
-    // Invalidate the Profile Replies provider for this user.
-    // This forces the Profile Screen to re-fetch the replies list next time it's viewed.
-    ref.invalidate(userRepliesProvider(user.id));
+      // 3. Invalidate Profile Replies so they refresh next time they are viewed
+      ref.invalidate(userRepliesProvider(user.id));
+
+    } catch (e) {
+      // Handle error (optional: show snackbar via a global listener or separate error state)
+    }
   }
 
-  // ... (Other methods: toggleUpvote, etc. same as before) ...
-  void incrementReplyCount(String id) { /* ... */ }
-  void toggleUpvote(String id) {
+  void incrementReplyCount(String id) {
+    // Optimistic local update
     state.whenData((comments) {
       final updatedList = comments.map((c) {
         if (c.id == id) {
-          final isUpvoting = !c.isLiked;
-          return c.copyWith(
-            isLiked: isUpvoting,
-            upvotes: c.upvotes + (isUpvoting ? 1 : -1),
-          );
+          return c.copyWith(replyCount: c.replyCount + 1);
         }
         return c;
       }).toList();
-
-      _sortComments(updatedList); // Re-sort after vote change
       state = AsyncValue.data(updatedList);
     });
   }
-  void toggleBookmark(String id) {
+
+  Future<void> toggleUpvote(String id) async {
+    // 1. Optimistic Update
+    _updateCommentLocally(id, (c) {
+      final isUpvoting = !c.isLiked;
+      return c.copyWith(
+        isLiked: isUpvoting,
+        upvotes: c.upvotes + (isUpvoting ? 1 : -1),
+      );
+    });
+
+    try {
+      // 2. Network Call
+      await _repository.toggleCommentLike(id);
+    } catch (e) {
+      // 3. Revert on failure
+      _updateCommentLocally(id, (c) {
+        final wasUpvoting = c.isLiked;
+        return c.copyWith(
+          isLiked: !wasUpvoting,
+          upvotes: c.upvotes + (!wasUpvoting ? 1 : -1),
+        );
+      });
+    }
+  }
+
+  Future<void> toggleBookmark(String id) async {
+    _updateCommentLocally(id, (c) => c.copyWith(isBookmarked: !c.isBookmarked));
+    try {
+      await _repository.toggleCommentBookmark(id);
+    } catch (e) {
+      _updateCommentLocally(id, (c) => c.copyWith(isBookmarked: !c.isBookmarked));
+    }
+  }
+
+  void _updateCommentLocally(String id, Comment Function(Comment) transform) {
     state.whenData((comments) {
       final updatedList = comments.map((c) {
-        if (c.id == id) {
-          return c.copyWith(isBookmarked: !c.isBookmarked);
-        }
+        if (c.id == id) return transform(c);
         return c;
       }).toList();
+
+      // Re-sort if upvotes changed
+      _sortComments(updatedList);
       state = AsyncValue.data(updatedList);
     });
   }
@@ -101,5 +132,3 @@ final repliesProvider = StateNotifierProvider.family<CommentNotifier, AsyncValue
     return CommentNotifier(repository, commentId, ref, isReplyThread: true);
   },
 );
-
-
