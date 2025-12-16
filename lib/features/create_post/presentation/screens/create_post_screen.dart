@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../../feed/domain/models.dart';
 import '../../../feed/presentation/providers/feed_provider.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import 'dart:io';
 
 class CreatePostScreen extends ConsumerStatefulWidget {
   const CreatePostScreen({Key? key}) : super(key: key);
@@ -14,10 +16,21 @@ class CreatePostScreen extends ConsumerStatefulWidget {
 class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
   final _textController = TextEditingController();
   bool _isPosting = false; // Local state to track loading
+  final ImagePicker _picker = ImagePicker(); // Image Picker instance
+  File? _selectedImage; // State to hold the selected file
+
+  Future<void> _pickImage() async {
+    final XFile? pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      setState(() {
+        _selectedImage = File(pickedFile.path);
+      });
+    }
+  }
 
   void _post() async {
     final text = _textController.text.trim();
-    if (text.isEmpty) return;
+    if (text.isEmpty && _selectedImage == null) return;
 
     final user = ref.read(authProvider).value;
     if (user == null) return;
@@ -27,14 +40,28 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
     });
 
     try {
+      List<String> uploadedUrls = [];
+      PostContentType contentType = PostContentType.text;
+
+      // 1. Upload Image if exists
+      if (_selectedImage != null) {
+        // Call the upload method we just created in the repo
+        // We access the repo via the provider's valid ref
+        final repo = ref.read(feedRepositoryProvider);
+        final url = await repo.uploadMedia(_selectedImage!);
+        uploadedUrls.add(url);
+        contentType = PostContentType.image;
+      }
       // Create a temporary Post object to carry the data.
       // The Backend will ignore the ID, Timestamp, and Author fields and generate real ones.
+
       final draftPost = Post(
-        id: '', // Ignored by Repo
-        author: user, // Ignored by Repo (Backend uses token to identify author)
+        id: '',
+        author: user,
         content: text,
-        type: PostContentType.text,
-        timestamp: DateTime.now(), // Ignored by Repo
+        type: contentType, // Set type based on content
+        mediaUrls: uploadedUrls, // Pass the backend URL here
+        timestamp: DateTime.now(),
         isFollowing: true,
       );
 
@@ -110,11 +137,47 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
               ),
               enabled: !_isPosting, // Disable input while posting
             ),
-            const Spacer(),
+            // NEW: Image Preview Area
+            if (_selectedImage != null)
+              Expanded(
+                child: Stack(
+                  alignment: Alignment.topRight,
+                  children: [
+                    Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        image: DecorationImage(
+                          image: FileImage(_selectedImage!),
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                      width: double.infinity,
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.cancel, color: Colors.white),
+                      onPressed: () {
+                        setState(() {
+                          _selectedImage = null;
+                        });
+                      },
+                    ),
+                  ],
+                ),
+              )
+            else
+              const Spacer(),
             Row(
               children: [
-                IconButton(onPressed: () {}, icon: const Icon(Icons.image, color: Colors.blue)),
-                IconButton(onPressed: () {}, icon: const Icon(Icons.videocam, color: Colors.blue)),
+                IconButton(
+                  onPressed: _pickImage, // Hooked up the picker
+                  icon: const Icon(Icons.image, color: Colors.blue),
+                ),
+                IconButton(
+                    onPressed: () {
+                      // Logic for video can be added similarly later
+                    },
+                    icon: const Icon(Icons.videocam, color: Colors.blue)
+                ),
                 const Spacer(),
                 const Text("Anyone", style: TextStyle(color: Colors.grey)),
               ],

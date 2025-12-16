@@ -2,11 +2,36 @@ import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../../core/models/user_model.dart';
 import '../domain/models.dart';
+import 'dart:io';
 
 class FeedRepository {
   // Use 10.0.2.2 for Android Emulator, localhost for iOS Simulator
   final Dio _dio = Dio(BaseOptions(baseUrl: 'http://10.0.2.2:8000'));
   final _storage = const FlutterSecureStorage();
+
+  // Upload Media Method
+  Future<String> uploadMedia(File file) async {
+    try {
+      final options = await _getOptions();
+
+      String fileName = file.path.split('/').last;
+
+      // Create FormData for file upload
+      // Adjust "file" to match the key your backend expects (e.g., 'image', 'media')
+      FormData formData = FormData.fromMap({
+        "file": await MultipartFile.fromFile(file.path, filename: fileName),
+      });
+
+      // Assuming your endpoint is '/upload'. Change this to your actual endpoint.
+      final response = await _dio.post('/upload', data: formData, options: options);
+
+      // Assuming backend returns JSON like: { "url": "https://..." }
+      // If it returns a plain string, use: return response.data.toString();
+      return response.data['url'];
+    } catch (e) {
+      throw Exception("Failed to upload media: $e");
+    }
+  }
 
   // Helper to get headers with Auth Token
   Future<Options> _getOptions() async {
