@@ -1,9 +1,12 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../data/feed_repository.dart';
 import '../../domain/models.dart';
 import 'feed_provider.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../profile/presentation/providers/profile_providers.dart';
+
+// Uncomment real repo when testing with backend
+// import '../../data/feed_repository.dart';
+import '../../data/mock_feed_repo.dart';
 
 class CommentNotifier extends StateNotifier<AsyncValue<List<Comment>>> {
   final FeedRepository _repository;

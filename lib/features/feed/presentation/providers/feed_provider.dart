@@ -1,6 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../data/feed_repository.dart';
 import '../../domain/models.dart';
+
+// Uncomment real repo when testing with backend
+// import '../../data/feed_repository.dart';
+import '../../data/mock_feed_repo.dart';
+
 
 final feedRepositoryProvider = Provider<FeedRepository>((ref) {
   return FeedRepository();

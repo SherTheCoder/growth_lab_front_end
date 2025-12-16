@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/theme_provider.dart';
@@ -35,11 +37,19 @@ class _FeedScreenState extends ConsumerState<FeedScreen>
         headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
           return [
             SliverAppBar(
-              backgroundColor: theme.appBarTheme.backgroundColor,
+                backgroundColor: theme.scaffoldBackgroundColor.withOpacity(0.85),
               elevation: 0,
               floating: true,
               snap: true,
               pinned: false,
+              flexibleSpace: ClipRect(
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 12.0, sigmaY: 12.0),
+                  child: Container(
+                    color: Colors.transparent,
+                  ),
+                ),
+              ),
               leading: IconButton(
                 icon: Icon(Icons.menu, color: theme.iconTheme.color),
                 onPressed: () {},

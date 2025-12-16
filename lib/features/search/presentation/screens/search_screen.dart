@@ -8,6 +8,9 @@ class SearchScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 1. Get the current theme data
+    final theme = Theme.of(context);
+
     // Mock suggested accounts
     final suggestions = [
       const User(id: 's1', name: 'Maximilian Werner', username: '@maximilian', avatarUrl: 'https://i.pravatar.cc/150?u=max', headline: 'Founder of INSPIRED', location: 'Switzerland', isVerified: true),
@@ -16,10 +19,14 @@ class SearchScreen extends StatelessWidget {
     ];
 
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        title: const Text("Search", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 24, color: Colors.white)),
+        backgroundColor: theme.scaffoldBackgroundColor,
+        // UPDATED: Use headline style instead of hardcoded white
+        title: Text(
+          "Search",
+          style: theme.textTheme.headlineLarge?.copyWith(fontSize: 24),
+        ),
         elevation: 0,
       ),
       body: Column(
@@ -28,27 +35,33 @@ class SearchScreen extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: TextField(
-              style: const TextStyle(color: Colors.white),
+              // UPDATED: Use body text color so it's visible in both modes
+              style: theme.textTheme.bodyLarge,
               decoration: InputDecoration(
                 hintText: "Accounts, topics, keywords...",
-                hintStyle: const TextStyle(color: Colors.grey),
-                prefixIcon: const Icon(Icons.search, color: Colors.grey),
-                filled: true,
-                fillColor: Colors.grey[900],
+                // UPDATED: Use theme hint color
+                hintStyle: TextStyle(color: theme.hintColor),
+                prefixIcon: Icon(Icons.search, color: theme.iconTheme.color),
+                // Note: We keep the border radius but let the global InputDecorationTheme handle colors
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
               ),
             ),
           ),
           const SizedBox(height: 24),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16),
-            child: Text("Suggested accounts", style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Text(
+              "Suggested accounts",
+              // UPDATED: Use theme text style
+              style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold, fontSize: 18),
+            ),
           ),
           const SizedBox(height: 16),
           Expanded(
             child: ListView.separated(
               itemCount: suggestions.length,
-              separatorBuilder: (_, __) => Divider(color: Colors.grey[800]),
+              // UPDATED: Use theme divider color (subtle in both modes)
+              separatorBuilder: (_, __) => Divider(color: theme.dividerColor),
               itemBuilder: (context, index) {
                 final user = suggestions[index];
                 return ListTile(
@@ -61,24 +74,38 @@ class SearchScreen extends StatelessWidget {
                   leading: UserAvatar(avatarUrl: user.avatarUrl),
                   title: Row(
                     children: [
-                      Text(user.name, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                      if (user.isVerified) const Icon(Icons.verified, size: 14, color: Colors.blue),
+                      Flexible(
+                        child: Text(
+                          user.name,
+                          // UPDATED: Use body text (Black in Light, White in Dark)
+                          style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      if (user.isVerified) ...[
+                        const SizedBox(width: 4),
+                        const Icon(Icons.verified, size: 14, color: Colors.blue),
+                      ],
                     ],
                   ),
                   subtitle: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(user.username, style: const TextStyle(color: Colors.grey)),
-                      Text(user.headline, style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                      Text(user.username, style: theme.textTheme.bodyMedium),
+                      Text(
+                        user.headline,
+                        style: theme.textTheme.bodyMedium?.copyWith(fontSize: 12),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ],
                   ),
                   trailing: OutlinedButton(
                     onPressed: () {},
-                    style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: Colors.white),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                    ),
-                    child: const Text("Follow", style: TextStyle(color: Colors.white)),
+                    // UPDATED: Removed hardcoded styles.
+                    // This now inherits from 'outlinedButtonTheme' in app_theme.dart
+                    // (Teal in Light mode, White in Dark mode)
+                    child: const Text("Follow"),
                   ),
                 );
               },

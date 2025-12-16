@@ -4,6 +4,7 @@ import 'main_wrapper.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/theme_provider.dart';
 import 'main_wrapper.dart'; // Import the wrapper
+import 'package:flutter/services.dart'; // Import this
 
 void main() {
   runApp(
@@ -19,7 +20,11 @@ class GrowthLabApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final themeMode = ref.watch(themeProvider);
-
+    SystemChrome.setSystemUIOverlayStyle(
+        themeMode == ThemeMode.dark
+            ? SystemUiOverlayStyle.light // White icons for Dark Mode
+            : SystemUiOverlayStyle.dark  // Black icons for Light Mode
+    );
     return MaterialApp(
       title: 'GrowthLab',
       debugShowCheckedModeBanner: false,

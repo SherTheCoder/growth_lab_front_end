@@ -7,17 +7,20 @@ class AppTheme {
   static const Color _primaryColor = Color(0xFF3A7D79);
 
   // Secondary/Variant (Used for gradients or accents)
-  static const Color _secondaryColor = Color(0xFFD4AF37); // Gold-ish tone seen in gradients
+  static const Color _secondaryColor = Color(
+      0xFFD4AF37); // Gold-ish tone seen in gradients
 
   // Light Theme Colors
   static const Color _lightBackgroundColor = Color(0xFFFFFFFF); // Pure White
-  static const Color _lightSurfaceColor = Color(0xFFF8F9FB); // Very light grey/blue for backgrounds
+  static const Color _lightSurfaceColor = Color(
+      0xFFF8F9FB); // Very light grey/blue for backgrounds
   static const Color _lightTextColor = Color(0xFF1A1A1A); // Almost Black
   static const Color _lightSubTextColor = Color(0xFF555555); // Dark Grey
 
   // Dark Theme Colors (The Deep Navy style)
   static const Color _darkBackgroundColor = Color(0xFF0D121D); // Deep Navy Blue
-  static const Color _darkSurfaceColor = Color(0xFF161C28); // Lighter Navy for Cards
+  static const Color _darkSurfaceColor = Color(
+      0xFF161C28); // Lighter Navy for Cards
   static const Color _darkTextColor = Color(0xFFFFFFFF); // Pure White
   static const Color _darkSubTextColor = Color(0xFFAAAAAA); // Light Grey
 
@@ -68,10 +71,17 @@ class AppTheme {
 
     // Card Theme (for Post Cards)
     cardTheme: CardTheme(
-      color: _lightBackgroundColor,
-      elevation: 2,
-      shadowColor: Colors.black.withOpacity(0.05),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        color: _lightBackgroundColor,
+        elevation: 2,
+        shadowColor: Colors.black.withOpacity(0.05),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(
+              color: Colors.grey.withOpacity(0.2),
+              width: 1
+          ),
+        ),
+
     ),
 
     // Input Decoration (TextFields)
@@ -84,10 +94,16 @@ class AppTheme {
         borderSide: BorderSide.none,
       ),
     ),
-
+    dialogTheme: DialogTheme(
+      backgroundColor: _lightBackgroundColor, // or _darkSurfaceColor
+      titleTextStyle: TextStyle(
+          color: _lightTextColor, fontWeight: FontWeight.bold, fontSize: 20),
+      contentTextStyle: TextStyle(color: _lightTextColor, fontSize: 16),
+    ),
     // Typography
     textTheme: const TextTheme(
-      headlineLarge: TextStyle(color: _lightTextColor, fontWeight: FontWeight.bold),
+      headlineLarge: TextStyle(
+          color: _lightTextColor, fontWeight: FontWeight.bold),
       bodyLarge: TextStyle(color: _lightTextColor),
       bodyMedium: TextStyle(color: _lightSubTextColor),
     ),
@@ -114,6 +130,12 @@ class AppTheme {
       iconTheme: IconThemeData(color: _darkTextColor),
     ),
     // ... inside darkTheme ...
+    dialogTheme: DialogTheme(
+      backgroundColor: _lightBackgroundColor, // or _darkSurfaceColor
+      titleTextStyle: TextStyle(
+          color: _lightTextColor, fontWeight: FontWeight.bold, fontSize: 20),
+      contentTextStyle: TextStyle(color: _lightTextColor, fontSize: 16),
+    ),
 
     // Buttons (Pill-shaped, Teal)
     elevatedButtonTheme: ElevatedButtonThemeData(
@@ -128,7 +150,8 @@ class AppTheme {
     ),
     outlinedButtonTheme: OutlinedButtonThemeData(
       style: OutlinedButton.styleFrom(
-        foregroundColor: Colors.white, // White text on dark for secondary buttons
+        foregroundColor: Colors.white,
+        // White text on dark for secondary buttons
         side: const BorderSide(color: Colors.white24, width: 1),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
         padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
@@ -166,7 +189,8 @@ class AppTheme {
 
     // Typography
     textTheme: const TextTheme(
-      headlineLarge: TextStyle(color: _darkTextColor, fontWeight: FontWeight.bold),
+      headlineLarge: TextStyle(
+          color: _darkTextColor, fontWeight: FontWeight.bold),
       bodyLarge: TextStyle(color: _darkTextColor),
       bodyMedium: TextStyle(color: _darkSubTextColor),
     ),

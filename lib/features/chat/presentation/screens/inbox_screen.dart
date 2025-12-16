@@ -50,7 +50,7 @@ class InboxScreen extends ConsumerWidget {
 
           return ListView.separated(
             itemCount: conversations.length,
-            separatorBuilder: (_, __) => Divider(color: Colors.grey[900], height: 1),
+            separatorBuilder: (_, __) => Divider(color: Theme.of(context).dividerColor, height: 1),
             itemBuilder: (context, index) {
               final conversation = conversations[index];
               // Identify the "Other" user to display their name/avatar

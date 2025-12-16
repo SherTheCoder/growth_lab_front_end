@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:growth_lab/shared/presentation/widgets/user_avatar.dart';
@@ -107,10 +109,16 @@ class ProfileScreen extends ConsumerWidget {
               ),
             ),
             SliverAppBar(
-              backgroundColor: theme.scaffoldBackgroundColor,
+              backgroundColor: Theme.of(context).scaffoldBackgroundColor.withOpacity(0.85),
               pinned: true,
               floating: false,
               automaticallyImplyLeading: false,
+              flexibleSpace: ClipRect(
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 12.0, sigmaY: 12.0),
+                  child: Container(color: Colors.transparent),
+                ),
+              ),
               bottom: const TabBar(
                 tabs: [
                   Tab(text: "Posts"),
@@ -146,7 +154,7 @@ class _UserPostsFeed extends ConsumerWidget {
     return feedState.when(
       data: (posts) {
         final userPosts = posts.where((p) => p.author.id == userId).toList();
-        if (userPosts.isEmpty) return const Center(child: Text("Create your first post", style: TextStyle(color: Colors.grey)));
+        if (userPosts.isEmpty) return  Center(child: Text("Create your first post", style: Theme.of(context).textTheme.bodyMedium));
         return ListView.builder(
           padding: EdgeInsets.zero,
           itemCount: userPosts.length,
@@ -163,19 +171,19 @@ class _UserPostsFeed extends ConsumerWidget {
 class _UserRepliesFeed extends ConsumerWidget {
   final String userId;
   const _UserRepliesFeed({required this.userId});
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     // We watch the dedicated replies provider for this user
     final repliesState = ref.watch(userRepliesProvider(userId));
 
+
     return repliesState.when(
       data: (replies) {
-        if (replies.isEmpty) return const Center(child: Text("No replies yet", style: TextStyle(color: Colors.grey)));
+        if (replies.isEmpty) return  Center(child: Text("No replies yet", style: Theme.of(context).textTheme.bodyMedium));
         return ListView.separated(
           padding: EdgeInsets.zero,
           itemCount: replies.length,
-          separatorBuilder: (_, __) => const Divider(color: Colors.white10, height: 1),
+          separatorBuilder: (_, __) =>  Divider(color: Theme.of(context).dividerColor, height: 1),
           itemBuilder: (context, index) {
             // Reusing CommentItem from PostDetailScreen
             return CommentItem(

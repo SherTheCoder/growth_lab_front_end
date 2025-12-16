@@ -129,7 +129,7 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
             TextField(
               controller: _textController,
               maxLines: 5,
-              style: const TextStyle(color: Colors.white, fontSize: 18),
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontSize: 18), // Use theme text color,
               decoration: const InputDecoration(
                 hintText: "What do you want to talk about?",
                 hintStyle: TextStyle(color: Colors.grey),

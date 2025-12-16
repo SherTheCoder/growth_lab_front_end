@@ -129,8 +129,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: Colors.black,
-        border: Border(top: BorderSide(color: Colors.grey[900]!, width: 0.5)),
+        color: theme.scaffoldBackgroundColor, // Ensure this isn't hardcoded
+        border: Border(top: BorderSide(color: theme.dividerColor, width: 0.5)),
       ),
       child: SafeArea(
         child: Row(
