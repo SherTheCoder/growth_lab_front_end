@@ -109,14 +109,16 @@ class ProfileScreen extends ConsumerWidget {
               ),
             ),
             SliverAppBar(
-              backgroundColor: Theme.of(context).scaffoldBackgroundColor.withOpacity(0.85),
+              backgroundColor: Colors.transparent, // Make parent transparent
               pinned: true,
               floating: false,
               automaticallyImplyLeading: false,
               flexibleSpace: ClipRect(
                 child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 12.0, sigmaY: 12.0),
-                  child: Container(color: Colors.transparent),
+                  filter: ImageFilter.blur(sigmaX: 20.0, sigmaY: 20.0), // Stronger blur
+                  child: Container(
+                    color: theme.scaffoldBackgroundColor.withOpacity(0.7), // Glass Tint
+                  ),
                 ),
               ),
               bottom: const TabBar(

@@ -37,16 +37,16 @@ class _FeedScreenState extends ConsumerState<FeedScreen>
         headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
           return [
             SliverAppBar(
-                backgroundColor: theme.scaffoldBackgroundColor.withOpacity(0.85),
+                backgroundColor: Colors.transparent,
               elevation: 0,
               floating: true,
               snap: true,
               pinned: false,
               flexibleSpace: ClipRect(
                 child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 12.0, sigmaY: 12.0),
+                  filter: ImageFilter.blur(sigmaX: 20.0, sigmaY: 20.0),
                   child: Container(
-                    color: Colors.transparent,
+                    color: theme.scaffoldBackgroundColor.withOpacity(0.7),
                   ),
                 ),
               ),

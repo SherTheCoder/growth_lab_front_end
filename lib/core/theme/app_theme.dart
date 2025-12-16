@@ -77,7 +77,7 @@ class AppTheme {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
           side: BorderSide(
-              color: Colors.grey.withOpacity(0.2),
+              color: Colors.grey.withOpacity(0.5),
               width: 1
           ),
         ),

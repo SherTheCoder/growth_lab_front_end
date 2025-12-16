@@ -18,7 +18,7 @@ class GrowthLabTitle extends StatelessWidget {
             color: theme.textTheme.bodyLarge?.color,
             fontWeight: FontWeight.w800,
             // Extra Bold
-            fontSize: 24,
+            fontSize: 32,
             letterSpacing: -0.5,
             fontFamily: 'Roboto', // Or system default
           ),
@@ -36,7 +36,7 @@ class GrowthLabTitle extends StatelessWidget {
           ),
           style: TextStyle(
             fontWeight: FontWeight.w800, // Extra Bold
-            fontSize: 24,
+            fontSize: 32,
             letterSpacing: -0.5,
           ),
         ),
