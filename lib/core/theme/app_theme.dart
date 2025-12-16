@@ -1,78 +1,181 @@
 import 'package:flutter/material.dart';
 
 class AppTheme {
-  // Define custom colors if needed
-  static const Color _lightPrimaryColor = Colors.blue;
-  static const Color _lightBackgroundColor = Colors.white;
-  static const Color _lightSurfaceColor = Color(0xFFF5F5F5);
+  // --- COLOR PALETTE EXTRACTED FROM SCREENSHOTS ---
 
-  static const Color _darkPrimaryColor = Colors.blue;
-  static const Color _darkBackgroundColor = Colors.black;
-  static const Color _darkSurfaceColor = Color(0xFF121212);
+  // Primary Accent (The Teal/Green color in buttons)
+  static const Color _primaryColor = Color(0xFF3A7D79);
 
-  // Light Theme
+  // Secondary/Variant (Used for gradients or accents)
+  static const Color _secondaryColor = Color(0xFFD4AF37); // Gold-ish tone seen in gradients
+
+  // Light Theme Colors
+  static const Color _lightBackgroundColor = Color(0xFFFFFFFF); // Pure White
+  static const Color _lightSurfaceColor = Color(0xFFF8F9FB); // Very light grey/blue for backgrounds
+  static const Color _lightTextColor = Color(0xFF1A1A1A); // Almost Black
+  static const Color _lightSubTextColor = Color(0xFF555555); // Dark Grey
+
+  // Dark Theme Colors (The Deep Navy style)
+  static const Color _darkBackgroundColor = Color(0xFF0D121D); // Deep Navy Blue
+  static const Color _darkSurfaceColor = Color(0xFF161C28); // Lighter Navy for Cards
+  static const Color _darkTextColor = Color(0xFFFFFFFF); // Pure White
+  static const Color _darkSubTextColor = Color(0xFFAAAAAA); // Light Grey
+
+  // --- LIGHT THEME DEFINITION ---
   static final ThemeData lightTheme = ThemeData(
     brightness: Brightness.light,
-    primaryColor: _lightPrimaryColor,
+    primaryColor: _primaryColor,
     scaffoldBackgroundColor: _lightBackgroundColor,
+
+    // AppBar
     appBarTheme: const AppBarTheme(
       backgroundColor: _lightBackgroundColor,
-      foregroundColor: Colors.black, // Icons and Text color
+      foregroundColor: _lightTextColor,
       elevation: 0,
+      iconTheme: IconThemeData(color: _lightTextColor),
     ),
+    // ... inside lightTheme ...
+
+    // Buttons (Pill-shaped, Teal)
+    elevatedButtonTheme: ElevatedButtonThemeData(
+      style: ElevatedButton.styleFrom(
+        backgroundColor: _primaryColor,
+        foregroundColor: Colors.white,
+        elevation: 0,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+        textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+      ),
+    ),
+    outlinedButtonTheme: OutlinedButtonThemeData(
+      style: OutlinedButton.styleFrom(
+        foregroundColor: _primaryColor,
+        side: const BorderSide(color: _primaryColor, width: 1.5),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+        textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+      ),
+    ),
+
+    // Color Scheme (New Flutter Standard)
     colorScheme: const ColorScheme.light(
-      primary: _lightPrimaryColor,
+      primary: _primaryColor,
+      secondary: _secondaryColor,
       surface: _lightBackgroundColor,
-      onSurface: Colors.black,
-      secondary: Colors.grey,
+      onSurface: _lightTextColor,
+      onPrimary: Colors.white, // Text on teal buttons
     ),
-    tabBarTheme: const TabBarTheme(
-      labelColor: Colors.black,
-      unselectedLabelColor: Colors.grey,
-      indicatorColor: Colors.black,
+
+    // Card Theme (for Post Cards)
+    cardTheme: CardTheme(
+      color: _lightBackgroundColor,
+      elevation: 2,
+      shadowColor: Colors.black.withOpacity(0.05),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
     ),
-    iconTheme: const IconThemeData(color: Colors.black),
+
+    // Input Decoration (TextFields)
+    inputDecorationTheme: InputDecorationTheme(
+      filled: true,
+      fillColor: _lightSurfaceColor,
+      hintStyle: const TextStyle(color: _lightSubTextColor),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide.none,
+      ),
+    ),
+
+    // Typography
     textTheme: const TextTheme(
-      bodyLarge: TextStyle(color: Colors.black),
-      bodyMedium: TextStyle(color: Colors.black87),
+      headlineLarge: TextStyle(color: _lightTextColor, fontWeight: FontWeight.bold),
+      bodyLarge: TextStyle(color: _lightTextColor),
+      bodyMedium: TextStyle(color: _lightSubTextColor),
     ),
-    bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-      backgroundColor: _lightBackgroundColor,
-      selectedItemColor: Colors.black,
-      unselectedItemColor: Colors.grey,
+
+    // Tab Bar
+    tabBarTheme: const TabBarTheme(
+      labelColor: _primaryColor,
+      unselectedLabelColor: _lightSubTextColor,
+      indicatorColor: _primaryColor,
     ),
   );
 
-  // Dark Theme
+  // --- DARK THEME DEFINITION ---
   static final ThemeData darkTheme = ThemeData(
     brightness: Brightness.dark,
-    primaryColor: _darkPrimaryColor,
+    primaryColor: _primaryColor,
     scaffoldBackgroundColor: _darkBackgroundColor,
+
+    // AppBar
     appBarTheme: const AppBarTheme(
       backgroundColor: _darkBackgroundColor,
-      foregroundColor: Colors.white,
+      foregroundColor: _darkTextColor,
       elevation: 0,
+      iconTheme: IconThemeData(color: _darkTextColor),
     ),
+    // ... inside darkTheme ...
+
+    // Buttons (Pill-shaped, Teal)
+    elevatedButtonTheme: ElevatedButtonThemeData(
+      style: ElevatedButton.styleFrom(
+        backgroundColor: _primaryColor,
+        foregroundColor: Colors.white,
+        elevation: 0,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+        textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+      ),
+    ),
+    outlinedButtonTheme: OutlinedButtonThemeData(
+      style: OutlinedButton.styleFrom(
+        foregroundColor: Colors.white, // White text on dark for secondary buttons
+        side: const BorderSide(color: Colors.white24, width: 1),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+        textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+      ),
+    ),
+
+    // Color Scheme
     colorScheme: const ColorScheme.dark(
-      primary: _darkPrimaryColor,
-      surface: _darkBackgroundColor,
-      onSurface: Colors.white,
-      secondary: Colors.grey,
+      primary: _primaryColor,
+      secondary: _secondaryColor,
+      surface: _darkSurfaceColor,
+      onSurface: _darkTextColor,
+      onPrimary: Colors.white,
     ),
-    tabBarTheme: const TabBarTheme(
-      labelColor: Colors.white,
-      unselectedLabelColor: Colors.grey,
-      indicatorColor: Colors.white,
+
+    // Card Theme
+    cardTheme: CardTheme(
+      color: _darkSurfaceColor,
+      elevation: 0,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      // Add a subtle border for dark mode cards if needed to separate from background
     ),
-    iconTheme: const IconThemeData(color: Colors.white),
+
+    // Input Decoration
+    inputDecorationTheme: InputDecorationTheme(
+      filled: true,
+      fillColor: _darkSurfaceColor,
+      hintStyle: const TextStyle(color: _darkSubTextColor),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide.none,
+      ),
+    ),
+
+    // Typography
     textTheme: const TextTheme(
-      bodyLarge: TextStyle(color: Colors.white),
-      bodyMedium: TextStyle(color: Colors.white70),
+      headlineLarge: TextStyle(color: _darkTextColor, fontWeight: FontWeight.bold),
+      bodyLarge: TextStyle(color: _darkTextColor),
+      bodyMedium: TextStyle(color: _darkSubTextColor),
     ),
+
+    // Navigation Bar
     bottomNavigationBarTheme: const BottomNavigationBarThemeData(
       backgroundColor: _darkBackgroundColor,
-      selectedItemColor: Colors.white,
-      unselectedItemColor: Colors.grey,
+      selectedItemColor: _primaryColor, // Teal for active tab
+      unselectedItemColor: _darkSubTextColor,
     ),
   );
 }

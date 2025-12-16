@@ -23,26 +23,27 @@ class _PostCardState extends ConsumerState<PostCard> {
     final theme = Theme.of(context);
     final post = widget.post;
 
-    return Container(
-      decoration: BoxDecoration(
-        border: Border(
-            bottom: BorderSide(
-                color: theme.dividerColor.withOpacity(0.1), width: 0.5)),
-      ),
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildHeader(context, post, theme),
-          const SizedBox(height: 8),
-          _buildContent(context, post, theme),
-          if (post.type != PostContentType.text) ...[
+    // CHANGED: Wrapped in Card to match the screenshot style
+    return Card(
+      // Margin creates the "floating" effect distinct from the background
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      clipBehavior: Clip.antiAlias, // Ensures content stays inside rounded corners
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildHeader(context, post, theme),
+            const SizedBox(height: 12), // Increased spacing slightly
+            _buildContent(context, post, theme),
+            if (post.type != PostContentType.text) ...[
+              const SizedBox(height: 12),
+              _buildMedia(context, post),
+            ],
             const SizedBox(height: 12),
-            _buildMedia(context, post),
+            _buildActionBar(context, post, theme),
           ],
-          const SizedBox(height: 12),
-          _buildActionBar(context, post, theme),
-        ],
+        ),
       ),
     );
   }
@@ -133,18 +134,21 @@ class _PostCardState extends ConsumerState<PostCard> {
           Text(
             displayText,
             style: TextStyle(
-                color: theme.textTheme.bodyMedium?.color,
+                color: theme.textTheme.bodyMedium?.color, // Uses theme color
                 fontSize: 15,
-                height: 1.4),
+                height: 1.5), // Increased line height for readability
           ),
           if (isLongText && !isExpanded)
             GestureDetector(
               onTap: () => setState(() => isExpanded = true),
-              child: Text(
-                "Show more",
-                style: TextStyle(
-                    color: theme.colorScheme.primary,
-                    fontWeight: FontWeight.w500),
+              child: Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  "Show more",
+                  style: TextStyle(
+                      color: theme.colorScheme.primary,
+                      fontWeight: FontWeight.w600),
+                ),
               ),
             ),
         ],
@@ -153,7 +157,6 @@ class _PostCardState extends ConsumerState<PostCard> {
   }
 
   Widget _buildMedia(BuildContext context, Post post) {
-    // ... media logic remains similar as it relies on Images ...
     if (post.type == PostContentType.carousel) {
       return SizedBox(
         height: 250,
@@ -191,14 +194,14 @@ class _PostCardState extends ConsumerState<PostCard> {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween, // Better spacing
         children: [
           _ActionButton(
             icon: Icons.change_history,
             label: post.upvotes.toString(),
-            color: post.isLiked ? Colors.blue : iconColor,
+            color: post.isLiked ? theme.colorScheme.primary : iconColor,
             onTap: () => ref.read(feedProvider.notifier).toggleUpvote(post.id),
           ),
-          const SizedBox(width: 24),
           _ActionButton(
             icon: Icons.chat_bubble_outline,
             label: post.comments.toString(),
@@ -212,26 +215,17 @@ class _PostCardState extends ConsumerState<PostCard> {
               );
             },
           ),
-          const SizedBox(width: 24),
           _ActionButton(
             icon: Icons.repeat,
             label: post.reposts > 0 ? post.reposts.toString() : "",
             color: iconColor,
             onTap: () {},
           ),
-          const SizedBox(width: 24),
-          _ActionButton(
-            icon: Icons.ios_share,
-            label: "",
-            color: iconColor,
-            onTap: () {},
-          ),
-          const Spacer(),
           IconButton(
             icon: Icon(
               post.isBookmarked ? Icons.bookmark : Icons.bookmark_border,
               color: post.isBookmarked
-                  ? theme.textTheme.bodyLarge?.color
+                  ? theme.colorScheme.primary
                   : iconColor,
               size: 22,
             ),
@@ -240,8 +234,6 @@ class _PostCardState extends ConsumerState<PostCard> {
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(),
           ),
-          const SizedBox(width: 16),
-          Icon(Icons.more_horiz, color: iconColor, size: 22),
         ],
       ),
     );
@@ -273,7 +265,7 @@ class _ActionButton extends StatelessWidget {
             const SizedBox(width: 6),
             Text(
               label,
-              style: TextStyle(color: color, fontSize: 13),
+              style: TextStyle(color: color, fontSize: 13, fontWeight: FontWeight.w500),
             ),
           ],
         ],
@@ -292,12 +284,6 @@ class _FollowButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // If following: background transparent, text color depends on theme
-    // If not following: background transparent (or colored if desired), text color depends on theme
-
-    // For specific "Growth Lab" style:
-    // Dark Mode: White text, white border
-    // Light Mode: Black text, black border
     final color = isFollowing
         ? theme.textTheme.bodyLarge?.color
         : theme.colorScheme.primary;
@@ -306,10 +292,9 @@ class _FollowButton extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
         decoration: BoxDecoration(
-          color:
-              isFollowing ? theme.scaffoldBackgroundColor : Colors.transparent,
+          color: isFollowing ? Colors.transparent : theme.colorScheme.primary.withOpacity(0.1),
           border: Border.all(
               color: isFollowing ? borderColor : (color ?? Colors.blue)),
           borderRadius: BorderRadius.circular(20),
@@ -319,7 +304,7 @@ class _FollowButton extends StatelessWidget {
           style: TextStyle(
             color: isFollowing ? theme.textTheme.bodyMedium?.color : color,
             fontSize: 12,
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.w700,
           ),
         ),
       ),

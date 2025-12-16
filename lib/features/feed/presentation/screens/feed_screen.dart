@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/theme_provider.dart';
 import '../providers/feed_provider.dart';
+import '../widgets/growth_lab_title.dart';
 import '../widgets/post_card.dart';
 
 class FeedScreen extends ConsumerStatefulWidget {
@@ -11,7 +12,8 @@ class FeedScreen extends ConsumerStatefulWidget {
   ConsumerState<FeedScreen> createState() => _FeedScreenState();
 }
 
-class _FeedScreenState extends ConsumerState<FeedScreen> with SingleTickerProviderStateMixin {
+class _FeedScreenState extends ConsumerState<FeedScreen>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
   @override
@@ -42,19 +44,16 @@ class _FeedScreenState extends ConsumerState<FeedScreen> with SingleTickerProvid
                 icon: Icon(Icons.menu, color: theme.iconTheme.color),
                 onPressed: () {},
               ),
-              title: Text(
-                "Growth Lab",
-                style: TextStyle(
-                  color: theme.textTheme.bodyLarge?.color,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 1.2,
-                ),
+              title: GrowthLabTitle(
+                theme: theme,
               ),
               centerTitle: true,
               actions: [
                 IconButton(
                   icon: Icon(
-                    themeMode == ThemeMode.dark ? Icons.light_mode : Icons.dark_mode,
+                    themeMode == ThemeMode.dark
+                        ? Icons.light_mode
+                        : Icons.dark_mode,
                     color: theme.iconTheme.color,
                   ),
                   onPressed: () {
@@ -62,7 +61,8 @@ class _FeedScreenState extends ConsumerState<FeedScreen> with SingleTickerProvid
                   },
                 ),
                 IconButton(
-                  icon: Icon(Icons.notifications_none, color: theme.iconTheme.color),
+                  icon: Icon(Icons.notifications_none,
+                      color: theme.iconTheme.color),
                   onPressed: () {},
                 ),
               ],
@@ -72,11 +72,12 @@ class _FeedScreenState extends ConsumerState<FeedScreen> with SingleTickerProvid
                 indicatorWeight: 2,
                 labelColor: theme.tabBarTheme.labelColor,
                 unselectedLabelColor: theme.tabBarTheme.unselectedLabelColor,
-                labelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                labelStyle:
+                    const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
                 tabs: const [
                   Tab(text: "Bookmarked"), // Bookmarks
-                  Tab(text: "Discover"),   // All Posts
-                  Tab(text: "Following"),  // Only Followed
+                  Tab(text: "Discover"), // All Posts
+                  Tab(text: "Following"), // Only Followed
                 ],
               ),
             ),
@@ -87,12 +88,14 @@ class _FeedScreenState extends ConsumerState<FeedScreen> with SingleTickerProvid
           physics: const NeverScrollableScrollPhysics(),
           children: [
             // 1. INNOVATION (BOOKMARKS)
-            _buildFilteredFeed(feedState, (post) => post.isBookmarked, "No saved items yet"),
+            _buildFilteredFeed(
+                feedState, (post) => post.isBookmarked, "No saved items yet"),
 
             // 2. DISCOVER (ALL)
             feedState.when(
               data: (posts) => RefreshIndicator(
-                onRefresh: () async => ref.read(feedProvider.notifier).loadPosts(),
+                onRefresh: () async =>
+                    ref.read(feedProvider.notifier).loadPosts(),
                 child: ListView.builder(
                   padding: EdgeInsets.zero,
                   itemCount: posts.length,
@@ -104,7 +107,8 @@ class _FeedScreenState extends ConsumerState<FeedScreen> with SingleTickerProvid
             ),
 
             // 3. FOLLOWING (IS FOLLOWING)
-            _buildFilteredFeed(feedState, (post) => post.isFollowing, "You aren't following anyone yet"),
+            _buildFilteredFeed(feedState, (post) => post.isFollowing,
+                "You aren't following anyone yet"),
           ],
         ),
       ),
@@ -112,12 +116,14 @@ class _FeedScreenState extends ConsumerState<FeedScreen> with SingleTickerProvid
     );
   }
 
-  Widget _buildFilteredFeed(AsyncValue<List<dynamic>> feedState, bool Function(dynamic) filter, String emptyMsg) {
+  Widget _buildFilteredFeed(AsyncValue<List<dynamic>> feedState,
+      bool Function(dynamic) filter, String emptyMsg) {
     return feedState.when(
       data: (posts) {
         final filtered = posts.where(filter).toList();
         if (filtered.isEmpty) {
-          return Center(child: Text(emptyMsg, style: TextStyle(color: Colors.grey[600])));
+          return Center(
+              child: Text(emptyMsg, style: TextStyle(color: Colors.grey[600])));
         }
         return ListView.builder(
           padding: EdgeInsets.zero,

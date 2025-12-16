@@ -57,9 +57,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     final messagesState = ref.watch(chatThreadProvider(widget.conversationId));
 
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.black,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         leading: BackButton(color: Colors.white),
         title: Row(
           children: [
@@ -184,7 +184,7 @@ class _MessageBubble extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
         decoration: BoxDecoration(
-          color: isMe ? Colors.blue : Colors.grey[800],
+          color: isMe ? theme.colorScheme.primary : theme.cardTheme.color,
           borderRadius: BorderRadius.only(
             topLeft: const Radius.circular(16),
             topRight: const Radius.circular(16),
@@ -194,7 +194,11 @@ class _MessageBubble extends StatelessWidget {
         ),
         child: Text(
           message.content,
-          style: const TextStyle(color: Colors.white, fontSize: 15),
+            style: TextStyle(
+                color: isMe ? theme.colorScheme.onPrimary : theme.textTheme.bodyLarge?.color,
+                fontSize: 15
+            ),
+
         ),
       ),
     );

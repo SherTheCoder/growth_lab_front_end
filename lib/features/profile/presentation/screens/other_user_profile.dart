@@ -24,13 +24,13 @@ class OtherUserProfileScreen extends ConsumerWidget {
     return DefaultTabController(
       length: 2,
       child: Scaffold(
-        backgroundColor: Colors.black,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         body: NestedScrollView(
           headerSliverBuilder: (context, innerBoxIsScrolled) {
             return [
               SliverAppBar(
                 expandedHeight: 180,
-                backgroundColor: Colors.black,
+                backgroundColor: Theme.of(context).scaffoldBackgroundColor,
                 pinned: false,
                 flexibleSpace: FlexibleSpaceBar(
                   background: Stack(

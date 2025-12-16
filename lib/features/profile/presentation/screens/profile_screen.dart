@@ -5,7 +5,7 @@ import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../feed/presentation/providers/feed_provider.dart';
 import '../../../feed/presentation/widgets/post_card.dart';
 import '../../../feed/presentation/screens/post_detail_screen.dart'; // For CommentItem
-import '../providers/profile_providers.dart'; // Import the new provider
+import '../providers/profile_providers.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({Key? key}) : super(key: key);
@@ -14,16 +14,20 @@ class ProfileScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final currentUserState = ref.watch(authProvider);
     final user = currentUserState.value;
+    final theme = Theme.of(context);
 
     if (user == null) return const Center(child: Text("Not logged in"));
 
     return DefaultTabController(
       length: 3,
       child: Scaffold(
-        backgroundColor: Colors.black,
+        backgroundColor: theme.scaffoldBackgroundColor,
         appBar: AppBar(
-          backgroundColor: Colors.black,
-          leading: IconButton(icon: const Icon(Icons.arrow_back, color: Colors.white), onPressed: () {}),
+          backgroundColor: theme.scaffoldBackgroundColor,
+          leading: IconButton(
+            icon: Icon(Icons.arrow_back, color: theme.iconTheme.color),
+            onPressed: () {},
+          ),
         ),
         body: NestedScrollView(
           headerSliverBuilder: (_, __) => [
@@ -35,58 +39,79 @@ class ProfileScreen extends ConsumerWidget {
                   children: [
                     Stack(
                       children: [
-                        Container(height: 100, color: Colors.purpleAccent.withOpacity(0.2)),
+                        // UPDATED: Theme-based background gradient instead of purple
+                        Container(
+                          height: 100,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(16),
+                            gradient: LinearGradient(
+                              colors: [
+                                theme.colorScheme.primary.withOpacity(0.2),
+                                theme.scaffoldBackgroundColor,
+                              ],
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                            ),
+                          ),
+                        ),
                         Positioned(
                           bottom: 0,
                           left: 16,
-                          child: UserAvatar(avatarUrl: user.avatarUrl, radius: 40,),
-
+                          child: Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              color: theme.scaffoldBackgroundColor,
+                              shape: BoxShape.circle,
+                            ),
+                            child: UserAvatar(avatarUrl: user.avatarUrl, radius: 40),
+                          ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 50),
-                    Text(user.username, style: const TextStyle(color: Colors.grey)),
-                    Text(user.name, style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 12),
+                    Text(user.username,
+                        style: TextStyle(color: theme.colorScheme.secondary)),
+                    Text(user.name,
+                        style: theme.textTheme.headlineLarge?.copyWith(fontSize: 22)),
                     const SizedBox(height: 8),
-                    Text("${user.headline} • ${user.location}", style: const TextStyle(color: Colors.white)),
-                    const SizedBox(height: 16),
-                    Row(
-                      children: const [
-                        Text("2 Following", style: TextStyle(color: Colors.grey)),
-                        SizedBox(width: 16),
-                        Text("0 Followers", style: TextStyle(color: Colors.grey)),
-                      ],
-                    ),
+                    Text("${user.headline} • ${user.location}",
+                        style: theme.textTheme.bodyMedium),
                     const SizedBox(height: 16),
                     Row(
                       children: [
+                        Text("2 Following", style: theme.textTheme.bodyMedium),
+                        const SizedBox(width: 16),
+                        Text("0 Followers", style: theme.textTheme.bodyMedium),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                    Row(
+                      children: [
                         Expanded(
+                          // Uses the new OutlinedButtonTheme
                           child: OutlinedButton(
                             onPressed: () {},
-                            style: OutlinedButton.styleFrom(
-                              side: const BorderSide(color: Colors.grey),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                            ),
-                            child: const Text("Edit profile", style: TextStyle(color: Colors.white)),
+                            child: const Text("Edit profile"),
                           ),
                         ),
                         const SizedBox(width: 8),
-                        IconButton(onPressed: () => ref.read(authProvider.notifier).logout(), icon: const Icon(Icons.logout, color: Colors.red)),
+                        IconButton(
+                          onPressed: () =>
+                              ref.read(authProvider.notifier).logout(),
+                          icon: const Icon(Icons.logout, color: Colors.red),
+                        ),
                       ],
                     ),
                   ],
                 ),
               ),
             ),
-            const SliverAppBar(
-              backgroundColor: Colors.black,
-              pinned: false,
+            SliverAppBar(
+              backgroundColor: theme.scaffoldBackgroundColor,
+              pinned: true,
               floating: false,
               automaticallyImplyLeading: false,
-              bottom: TabBar(
-                indicatorColor: Colors.white,
-                labelColor: Colors.white,
-                unselectedLabelColor: Colors.grey,
+              bottom: const TabBar(
                 tabs: [
                   Tab(text: "Posts"),
                   Tab(text: "Replies"),
@@ -96,10 +121,9 @@ class ProfileScreen extends ConsumerWidget {
             )
           ],
           body: TabBarView(
-            physics: NeverScrollableScrollPhysics(),
+            physics: const NeverScrollableScrollPhysics(),
             children: [
               _UserPostsFeed(userId: user.id),
-              // NEW: User Replies Feed
               _UserRepliesFeed(userId: user.id),
               _UserUpvotesFeed(),
             ],
@@ -109,6 +133,7 @@ class ProfileScreen extends ConsumerWidget {
     );
   }
 }
+
 
 class _UserPostsFeed extends ConsumerWidget {
   final String userId;

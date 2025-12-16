@@ -16,9 +16,9 @@ class SearchScreen extends StatelessWidget {
     ];
 
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.black,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         title: const Text("Search", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 24, color: Colors.white)),
         elevation: 0,
       ),

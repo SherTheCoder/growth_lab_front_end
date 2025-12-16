@@ -12,18 +12,20 @@ class AppTextField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return TextField(
       controller: controller,
       obscureText: isPassword,
       maxLines: maxLines ?? 1,
-      style: const TextStyle(color: Colors.white),
+      style: theme.textTheme.bodyLarge,
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: const TextStyle(color: Colors.grey),
+        labelStyle: TextStyle(color: theme.hintColor),
         hintText: hint,
+        hintStyle: TextStyle(color: theme.hintColor),
         enabledBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey)),
         focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Colors.white)),
-        suffixIcon: suffixIcon != null ? Icon(suffixIcon, color: Colors.grey) : null,
+        suffixIcon: suffixIcon != null ? Icon(suffixIcon, color: theme.iconTheme.color) : null,
       ),
     );
   }

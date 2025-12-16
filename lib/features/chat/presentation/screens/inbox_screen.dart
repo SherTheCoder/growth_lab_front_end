@@ -15,9 +15,9 @@ class InboxScreen extends ConsumerWidget {
     final currentUser = ref.watch(authProvider).value;
 
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.black,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         title: const Text("Messages", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 24, color: Colors.white)),
         actions: [
           IconButton(
