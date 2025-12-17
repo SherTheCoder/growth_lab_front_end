@@ -96,7 +96,7 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
       appBar: AppBar(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         leading: IconButton(
-          icon: const Icon(Icons.close, color: Colors.white),
+          icon: Icon(Icons.close, color: Theme.of(context).primaryColor),
           onPressed: () => Navigator.pop(context),
         ),
         actions: [

@@ -1,25 +1,28 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../profile/data/connections.dart';
+import '../../data/feed_repository.dart';
 import '../../domain/models.dart';
 
-// Uncomment real repo when testing with backend
-// import '../../data/feed_repository.dart';
-import '../../data/mock_feed_repo.dart';
-
-
+// Providers
 final feedRepositoryProvider = Provider<FeedRepository>((ref) {
   return FeedRepository();
 });
 
-class FeedNotifier extends StateNotifier<AsyncValue<List<Post>>> {
-  final FeedRepository _repository;
+final connectionRepositoryProvider = Provider<ConnectionRepository>((ref) {
+  return ConnectionRepository();
+});
 
-  FeedNotifier(this._repository) : super(const AsyncValue.loading()) {
+class FeedNotifier extends StateNotifier<AsyncValue<List<Post>>> {
+  final FeedRepository _feedRepository;
+  final ConnectionRepository _connectionRepository;
+
+  FeedNotifier(this._feedRepository, this._connectionRepository) : super(const AsyncValue.loading()) {
     loadPosts();
   }
 
   Future<void> loadPosts() async {
     try {
-      final posts = await _repository.fetchPosts();
+      final posts = await _feedRepository.fetchPosts();
       state = AsyncValue.data(posts);
     } catch (e, st) {
       state = AsyncValue.error(e, st);
@@ -27,25 +30,19 @@ class FeedNotifier extends StateNotifier<AsyncValue<List<Post>>> {
   }
 
   Future<void> addPost(Post post) async {
-    // We assume the UI shows a loading state or waits for this Future to complete.
-    // We send the post to the backend first to get the real ID and Timestamp.
     try {
-      final newPost = await _repository.addPost(post);
-
-      // Add the real returned post to the top of the list
+      final newPost = await _feedRepository.addPost(post);
       state.whenData((currentPosts) {
         state = AsyncValue.data([newPost, ...currentPosts]);
       });
     } catch (e) {
-      // You might want to rethrow or handle the error so the UI shows a snackbar
       rethrow;
     }
   }
 
-  // --- INTERACTION METHODS WITH ERROR HANDLING ---
+  // --- INTERACTIONS ---
 
   Future<void> toggleUpvote(String postId) async {
-    // 1. Optimistic Update (Immediate UI feedback)
     _updatePostLocally(postId, (post) {
       final isUpvoting = !post.isLiked;
       return post.copyWith(
@@ -55,46 +52,48 @@ class FeedNotifier extends StateNotifier<AsyncValue<List<Post>>> {
     });
 
     try {
-      // 2. Network Call
-      await _repository.toggleLike(postId);
+      await _feedRepository.toggleLike(postId);
     } catch (e) {
-      // 3. Revert on Failure
+      // Revert on Failure
       _updatePostLocally(postId, (post) {
-        final wasUpvoting = post.isLiked; // The state we just switched TO
+        final wasUpvoting = post.isLiked;
         return post.copyWith(
-          isLiked: !wasUpvoting, // Switch back
+          isLiked: !wasUpvoting,
           upvotes: post.upvotes + (!wasUpvoting ? 1 : -1),
         );
       });
     }
   }
 
-  Future<void> toggleFollow(String postId) async {
-    _updatePostLocally(postId, (post) => post.copyWith(isFollowing: !post.isFollowing));
+  // UPDATED: Follow Logic
+  Future<void> toggleFollow(String authorId) async {
+    // 1. Optimistic Update: Find ALL posts by this author and toggle their state
+    _updatePostsByAuthorLocally(authorId, (post) => post.copyWith(isFollowing: !post.isFollowing));
+
     try {
-      await _repository.toggleFollow(postId);
+      // 2. Network Call
+      await _connectionRepository.toggleFollow(authorId);
     } catch (e) {
-      // Revert
-      _updatePostLocally(postId, (post) => post.copyWith(isFollowing: !post.isFollowing));
+      // 3. Revert on Failure
+      _updatePostsByAuthorLocally(authorId, (post) => post.copyWith(isFollowing: !post.isFollowing));
     }
   }
 
   Future<void> toggleBookmark(String postId) async {
     _updatePostLocally(postId, (post) => post.copyWith(isBookmarked: !post.isBookmarked));
     try {
-      await _repository.toggleBookmark(postId);
+      await _feedRepository.toggleBookmark(postId);
     } catch (e) {
-      // Revert
       _updatePostLocally(postId, (post) => post.copyWith(isBookmarked: !post.isBookmarked));
     }
   }
 
   void incrementCommentCount(String postId) {
-    // Simple local update, assuming success
     _updatePostLocally(postId, (post) => post.copyWith(comments: post.comments + 1));
   }
 
-  // Helper to reduce boilerplate
+  // --- HELPERS ---
+
   void _updatePostLocally(String postId, Post Function(Post) transform) {
     state.whenData((posts) {
       state = AsyncValue.data(posts.map((post) {
@@ -105,11 +104,25 @@ class FeedNotifier extends StateNotifier<AsyncValue<List<Post>>> {
       }).toList());
     });
   }
+
+  // NEW: Update all posts by a specific author (for Follow actions)
+  void _updatePostsByAuthorLocally(String authorId, Post Function(Post) transform) {
+    state.whenData((posts) {
+      state = AsyncValue.data(posts.map((post) {
+        if (post.author.id == authorId) {
+          return transform(post);
+        }
+        return post;
+      }).toList());
+    });
+  }
 }
 
+// Main Provider
 final feedProvider = StateNotifierProvider<FeedNotifier, AsyncValue<List<Post>>>((ref) {
-  final repository = ref.watch(feedRepositoryProvider);
-  return FeedNotifier(repository);
+  final feedRepo = ref.watch(feedRepositoryProvider);
+  final connectionRepo = ref.watch(connectionRepositoryProvider);
+  return FeedNotifier(feedRepo, connectionRepo);
 });
 
 // Bookmarks Provider

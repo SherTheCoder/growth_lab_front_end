@@ -3,13 +3,23 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:growth_lab/shared/presentation/widgets/user_avatar.dart';
 import '../../../chat/presentation/screens/chat_screen.dart';
 import 'package:growth_lab/core/models/user_model.dart';
-import '../../../feed/presentation/providers/feed_provider.dart';
 import '../../../feed/presentation/widgets/post_card.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../chat/presentation/providers/chat_providers.dart';
+// Import Search Repo for fetching user posts
+import '../../../search/data/search_repository.dart';
+import '../../../feed/domain/models.dart';
 
-// Placeholder for the ChatScreen which we will build next
-// import '../../../chat/presentation/screens/chat_screen.dart';
+// Create a simple FutureProvider to fetch this specific user's posts
+final userPostsProvider = FutureProvider.family<List<Post>, String>((ref, userId) async {
+  // Use FeedRepository, not SearchRepository
+  final feedRepo = ref.read(searchRepositoryProvider);
+  return feedRepo.fetchUserPosts(userId);
+});
+
+// Helper provider for SearchRepository if not already in search_screen.dart
+final searchRepositoryProvider = Provider((ref) => SearchRepository());
+
 
 class OtherUserProfileScreen extends ConsumerWidget {
   final User user;
@@ -19,51 +29,44 @@ class OtherUserProfileScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final currentUser = ref.watch(authProvider).value;
+    final theme = Theme.of(context);
 
-    // FIX: Added DefaultTabController to coordinate TabBar and TabBarView
     return DefaultTabController(
       length: 2,
       child: Scaffold(
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        backgroundColor: theme.scaffoldBackgroundColor,
         body: NestedScrollView(
           headerSliverBuilder: (context, innerBoxIsScrolled) {
             return [
               SliverAppBar(
                 expandedHeight: 180,
-                backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+                backgroundColor: theme.scaffoldBackgroundColor,
                 pinned: false,
+                iconTheme: const IconThemeData(color: Colors.white),
                 flexibleSpace: FlexibleSpaceBar(
                   background: Stack(
                     fit: StackFit.expand,
                     children: [
+                      // 1. Cover Image (You can use a placeholder or user.coverUrl if added later)
                       Image.network(
                         "https://images.unsplash.com/photo-1550684848-fac1c5b4e853?auto=format&fit=crop&q=80",
                         fit: BoxFit.cover,
-                        color: Colors.black.withOpacity(0.4),
-                        colorBlendMode: BlendMode.darken,
                       ),
+                      // 2. Gradient Overlay
                       Container(
-                        decoration: const BoxDecoration(
+                        decoration: BoxDecoration(
                           gradient: LinearGradient(
                             begin: Alignment.topCenter,
                             end: Alignment.bottomCenter,
-                            colors: [Colors.black12, Colors.black],
-                            stops: [0.0, 1.0],
+                            colors: [
+                              Colors.black12,
+                              theme.scaffoldBackgroundColor,
+                            ],
+                            stops: const [0.0, 1.0],
                           ),
                         ),
                       ),
                     ],
-                  ),
-                ),
-                leading: Container(
-                  margin: const EdgeInsets.all(8),
-                  decoration: const BoxDecoration(
-                    color: Colors.black45,
-                    shape: BoxShape.circle,
-                  ),
-                  child: IconButton(
-                    icon: const Icon(Icons.arrow_back, color: Colors.white),
-                    onPressed: () => Navigator.pop(context),
                   ),
                 ),
               ),
@@ -73,16 +76,15 @@ class OtherUserProfileScreen extends ConsumerWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Avatar overlap
                       Transform.translate(
                         offset: const Offset(0, -40),
                         child: Container(
                           padding: const EdgeInsets.all(4),
-                          decoration: const BoxDecoration(
-                            color: Colors.black,
+                          decoration: BoxDecoration(
+                            color: theme.scaffoldBackgroundColor,
                             shape: BoxShape.circle,
                           ),
-                          child: UserAvatar(avatarUrl: user.avatarUrl, radius: 45,),
+                          child: UserAvatar(avatarUrl: user.avatarUrl, radius: 45),
                         ),
                       ),
                       Transform.translate(
@@ -90,76 +92,100 @@ class OtherUserProfileScreen extends ConsumerWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(user.username, style: TextStyle(color: Colors.grey[400], fontSize: 16)),
+                            Text(user.username, style: TextStyle(color: theme.colorScheme.secondary, fontSize: 16)),
                             const SizedBox(height: 4),
                             Text(
                               user.name,
-                              style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
+                              style: TextStyle(
+                                  color: theme.textTheme.bodyLarge?.color,
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold
+                              ),
                             ),
                             const SizedBox(height: 8),
-                            Text("${user.headline} • ${user.location}", style: const TextStyle(color: Colors.white, fontSize: 15)),
-                            const SizedBox(height: 16),
-                            Row(
-                              children: const [
-                                _StatText(count: "5", label: "Following"),
-                                SizedBox(width: 16),
-                                _StatText(count: "98", label: "Followers"),
-                                SizedBox(width: 16),
-                                _StatText(count: "1", label: "Page"),
-                              ],
-                            ),
-                            const SizedBox(height: 16),
+                            // Real Headline & Location
                             Text(
-                              "tea maker, artist, healthcare app maker, decentralisation curioso, alternative way of being/living",
-                              style: TextStyle(color: Colors.grey[400], height: 1.4),
+                                "${user.headline} • ${user.location}",
+                                style: TextStyle(color: theme.textTheme.bodyMedium?.color, fontSize: 15)
                             ),
-                            const SizedBox(height: 12),
-                            const Row(
+                            const SizedBox(height: 16),
+
+                            // Real Stats
+                            Row(
                               children: [
-                                Icon(Icons.language, color: Colors.white, size: 16),
-                                SizedBox(width: 6),
-                                Text("https://www.herb elletease.com", style: TextStyle(color: Colors.white, fontWeight: FontWeight.w500)),
+                                _StatText(
+                                    count: "${user.totalConnections}",
+                                    label: "Connections",
+                                    theme: theme
+                                ),
+                                const SizedBox(width: 16),
+                                _StatText(
+                                    count: "${user.totalPosts}",
+                                    label: "Posts",
+                                    theme: theme
+                                ),
                               ],
                             ),
+                            const SizedBox(height: 16),
+
+                            // Real Bio
+                            if (user.bio.isNotEmpty) ...[
+                              Text(
+                                user.bio,
+                                style: TextStyle(color: theme.textTheme.bodyMedium?.color?.withOpacity(0.8), height: 1.4),
+                              ),
+                              const SizedBox(height: 12),
+                            ],
+
+                            // Real Website
+                            if (user.websiteUrl.isNotEmpty)
+                              Row(
+                                children: [
+                                  Icon(Icons.language, color: theme.colorScheme.primary, size: 16),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                      user.websiteUrl,
+                                      style: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.w500)
+                                  ),
+                                ],
+                              ),
+
                             const SizedBox(height: 24),
+
+                            // Buttons
                             Row(
                               children: [
                                 Expanded(
-                                  child: Expanded(
-                                    child: ElevatedButton(
-                                      onPressed: () async {
-                                        if (currentUser == null) return;
-
-                                        final repo = ref.read(chatRepositoryProvider);
-                                        // FIX: Pass full User objects to create conversation in memory
-                                        final chatId = await repo.getOrCreateConversation(currentUser, user);
-
-                                        if (context.mounted) {
-                                          Navigator.push(
-                                              context,
-                                              MaterialPageRoute(
-                                                  builder: (_) => ChatScreen(
-                                                      conversationId: chatId,
-                                                      otherUser: user
-                                                  )
-                                              )
-                                          );
-                                        }
-                                      },
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.white,
-                                        foregroundColor: Colors.black,
-                                        padding: const EdgeInsets.symmetric(vertical: 12),
-                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-                                      ),
-                                      child: const Text("Send message", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                                  child: ElevatedButton(
+                                    onPressed: () async {
+                                      if (currentUser == null) return;
+                                      final repo = ref.read(chatRepositoryProvider);
+                                      final chatId = await repo.getOrCreateConversation(currentUser, user);
+                                      if (context.mounted) {
+                                        Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                                builder: (_) => ChatScreen(
+                                                    conversationId: chatId,
+                                                    otherUser: user
+                                                )
+                                            )
+                                        );
+                                      }
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: theme.colorScheme.primary,
+                                      foregroundColor: theme.colorScheme.onPrimary,
+                                      padding: const EdgeInsets.symmetric(vertical: 12),
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                                     ),
+                                    child: const Text("Send message", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                                   ),
                                 ),
                                 const SizedBox(width: 12),
-                                _CircleAction(icon: Icons.person_add, onTap: () {}),
+                                _CircleAction(icon: Icons.person_add, onTap: () {}, theme: theme),
                                 const SizedBox(width: 12),
-                                _CircleAction(icon: Icons.more_horiz, onTap: () {}),
+                                _CircleAction(icon: Icons.more_horiz, onTap: () {}, theme: theme),
                               ],
                             ),
                           ],
@@ -171,59 +197,30 @@ class OtherUserProfileScreen extends ConsumerWidget {
               ),
               SliverPersistentHeader(
                 delegate: _SliverAppBarDelegate(
-                  const TabBar(
-                    indicatorColor: Colors.white,
-                    labelColor: Colors.white,
-                    unselectedLabelColor: Colors.grey,
-                    tabs: [
+                  TabBar(
+                    indicatorColor: theme.colorScheme.primary,
+                    labelColor: theme.colorScheme.primary,
+                    unselectedLabelColor: theme.textTheme.bodyMedium?.color,
+                    labelStyle: const TextStyle(fontWeight: FontWeight.bold),
+                    tabs: const [
                       Tab(text: "Posts"),
-                      Tab(text: "Pages"),
+                      Tab(text: "About"), // Changed Pages to About since backend doesn't support pages yet
                     ],
                   ),
+                  theme.scaffoldBackgroundColor,
                 ),
-                pinned: false,
+                pinned: true,
               ),
             ];
           },
           body: TabBarView(
             children: [
               _UserPostsFeed(userId: user.id),
-              const Center(child: Text("No pages yet", style: TextStyle(color: Colors.grey))),
+              const Center(child: Text("About info unavailable")),
             ],
           ),
         ),
       ),
-    );
-  }
-}
-
-class _StatText extends StatelessWidget {
-  final String count;
-  final String label;
-  const _StatText({required this.count, required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Text(count, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
-        const SizedBox(width: 4),
-        Text(label, style: const TextStyle(color: Colors.grey, fontSize: 15)),
-      ],
-    );
-  }
-}
-
-class _CircleAction extends StatelessWidget {
-  final IconData icon;
-  final VoidCallback onTap;
-  const _CircleAction({required this.icon, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(color: Colors.grey[900], shape: BoxShape.circle),
-      child: IconButton(icon: Icon(icon, color: Colors.white), onPressed: onTap),
     );
   }
 }
@@ -234,31 +231,76 @@ class _UserPostsFeed extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final feedState = ref.watch(feedProvider);
-    return feedState.when(
+    // USE THE NEW PROVIDER that fetches real posts by authorID
+    final postsAsync = ref.watch(userPostsProvider(userId));
+
+    return postsAsync.when(
       data: (posts) {
-        final userPosts = posts.where((p) => p.author.id == userId).toList();
-        if (userPosts.isEmpty) {
+        if (posts.isEmpty) {
           return const Padding(
             padding: EdgeInsets.only(top: 40.0),
-            child: Center(child: Text("No posts yet", style: TextStyle(color: Colors.grey))),
+            child: Center(child: Text("No posts yet")),
           );
         }
         return ListView.builder(
           padding: EdgeInsets.zero,
-          itemCount: userPosts.length,
-          itemBuilder: (context, index) => PostCard(post: userPosts[index]),
+          itemCount: posts.length,
+          itemBuilder: (context, index) => PostCard(post: posts[index]),
         );
       },
-      error: (e, _) => Center(child: Text("Error: $e")),
+      error: (e, _) => Center(child: Text("Error loading posts: $e")),
       loading: () => const Center(child: CircularProgressIndicator()),
+    );
+  }
+}
+
+// ... Keep _StatText, _CircleAction, and _SliverAppBarDelegate classes exactly as before ...
+class _StatText extends StatelessWidget {
+  final String count;
+  final String label;
+  final ThemeData theme;
+
+  const _StatText({required this.count, required this.label, required this.theme});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Text(count, style: TextStyle(color: theme.textTheme.bodyLarge?.color, fontWeight: FontWeight.bold, fontSize: 16)),
+        const SizedBox(width: 4),
+        Text(label, style: TextStyle(color: theme.textTheme.bodyMedium?.color, fontSize: 15)),
+      ],
+    );
+  }
+}
+
+class _CircleAction extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+  final ThemeData theme;
+
+  const _CircleAction({required this.icon, required this.onTap, required this.theme});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = theme.brightness == Brightness.dark;
+    return Container(
+      decoration: BoxDecoration(
+          color: isDark ? Colors.grey[800] : Colors.grey[200],
+          shape: BoxShape.circle
+      ),
+      child: IconButton(
+          icon: Icon(icon, color: theme.iconTheme.color),
+          onPressed: onTap
+      ),
     );
   }
 }
 
 class _SliverAppBarDelegate extends SliverPersistentHeaderDelegate {
   final TabBar _tabBar;
-  _SliverAppBarDelegate(this._tabBar);
+  final Color _backgroundColor;
+  _SliverAppBarDelegate(this._tabBar, this._backgroundColor);
 
   @override
   double get minExtent => _tabBar.preferredSize.height;
@@ -267,14 +309,8 @@ class _SliverAppBarDelegate extends SliverPersistentHeaderDelegate {
 
   @override
   Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
-    return Container(
-      color: Colors.black,
-      child: _tabBar,
-    );
+    return Container(color: _backgroundColor, child: _tabBar);
   }
-
   @override
-  bool shouldRebuild(_SliverAppBarDelegate oldDelegate) {
-    return false;
-  }
+  bool shouldRebuild(_SliverAppBarDelegate oldDelegate) => false;
 }

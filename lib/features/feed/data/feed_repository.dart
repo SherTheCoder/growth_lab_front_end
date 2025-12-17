@@ -1,39 +1,20 @@
+import 'dart:io';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart'; // for kIsWeb
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../../core/models/user_model.dart';
 import '../domain/models.dart';
-import 'dart:io';
 
 class FeedRepository {
-  // Use 10.0.2.2 for Android Emulator, localhost for iOS Simulator
-  final Dio _dio = Dio(BaseOptions(baseUrl: 'http://10.0.2.2:8000'));
+  // 1. Base URL matches 'main.py' prefix (/api/v1)
+  final Dio _dio = Dio(BaseOptions(
+    baseUrl: 'https://api.growthlab.sg/api/v1',
+    connectTimeout: const Duration(seconds: 15), // Increased timeout
+    receiveTimeout: const Duration(seconds: 15),
+  ));
+
   final _storage = const FlutterSecureStorage();
 
-  // Upload Media Method
-  Future<String> uploadMedia(File file) async {
-    try {
-      final options = await _getOptions();
-
-      String fileName = file.path.split('/').last;
-
-      // Create FormData for file upload
-      // Adjust "file" to match the key your backend expects (e.g., 'image', 'media')
-      FormData formData = FormData.fromMap({
-        "file": await MultipartFile.fromFile(file.path, filename: fileName),
-      });
-
-      // Assuming your endpoint is '/upload'. Change this to your actual endpoint.
-      final response = await _dio.post('/upload', data: formData, options: options);
-
-      // Assuming backend returns JSON like: { "url": "https://..." }
-      // If it returns a plain string, use: return response.data.toString();
-      return response.data['url'];
-    } catch (e) {
-      throw Exception("Failed to upload media: $e");
-    }
-  }
-
-  // Helper to get headers with Auth Token
   Future<Options> _getOptions() async {
     final token = await _storage.read(key: 'auth_token');
     return Options(
@@ -49,12 +30,14 @@ class FeedRepository {
   Future<List<Post>> fetchPosts() async {
     try {
       final options = await _getOptions();
-      // Assumes GET /posts returns a list of post objects
-      final response = await _dio.get('/posts', options: options);
+      // Endpoint: /feed/ (defined in feed.py router)
+      final response = await _dio.get('/feed/', options: options);
 
-      return (response.data as List)
-          .map((json) => Post.fromJson(json))
-          .toList();
+      // Backend returns a paginated wrapper: { "posts": [], "total": 10, ... }
+      // We need to extract the list from the "posts" key.
+      final List<dynamic> postsJson = response.data['posts'];
+
+      return postsJson.map((json) => Post.fromJson(json)).toList();
     } catch (e) {
       throw Exception("Failed to fetch posts: $e");
     }
@@ -63,11 +46,27 @@ class FeedRepository {
   Future<Post> addPost(Post post) async {
     try {
       final options = await _getOptions();
-      // We send the content and type. The backend should handle ID, timestamp, and author.
-      final response = await _dio.post('/posts', data: {
-        'content': post.content,
-        'type': post.type.name,
-        'media_urls': post.mediaUrls,
+
+      // Transform simple mediaUrls list into backend "attachments" schema
+      List<Map<String, dynamic>> attachments = [];
+      if (post.mediaUrls.isNotEmpty) {
+        // Simple logic: if type is video, assume all are video, else image
+        String type = post.type == PostContentType.video ? 'video' : 'image';
+
+        attachments = post.mediaUrls.map((url) => {
+          'postAttachmentType': type,
+          'postAttachmentUrl': url,
+          'postAttachmentTitle': 'Upload',
+          'postAttachmentDescription': ''
+        }).toList();
+      }
+
+      // Match 'PostCreate' schema from schemas_init_file.py
+      final response = await _dio.post('/feed/posts', data: {
+        'postContent': post.content,
+        'postVisibility': 'public', // Default visibility
+        'postHashTags': [],         // Can implement hashtag extraction later
+        'attachments': attachments
       }, options: options);
 
       return Post.fromJson(response.data);
@@ -76,39 +75,54 @@ class FeedRepository {
     }
   }
 
+  Future<String> uploadMedia(File file) async {
+    if (kIsWeb) {
+      throw Exception("Web upload not implemented yet (requires bytes/XFile)");
+    }
+
+    try {
+      final options = await _getOptions();
+      String fileName = file.path.split('/').last;
+
+      FormData formData = FormData.fromMap({
+        "file": await MultipartFile.fromFile(file.path, filename: fileName),
+      });
+
+      // Endpoint: /feed/upload
+      final response = await _dio.post('/feed/upload', data: formData, options: options);
+
+      // Backend returns { "url": "/uploads/posts/..." }
+      return response.data['url'];
+    } catch (e) {
+      throw Exception("Failed to upload media: $e");
+    }
+  }
+
   // --- INTERACTIONS ---
 
   Future<void> toggleLike(String postId) async {
     try {
       final options = await _getOptions();
-      await _dio.post('/posts/$postId/like', options: options);
+      // Endpoint: /feed/posts/{id}/like
+      await _dio.post('/feed/posts/$postId/like', options: options);
     } catch (e) {
       throw Exception("Failed to like post: $e");
     }
   }
 
   Future<void> toggleBookmark(String postId) async {
-    try {
-      final options = await _getOptions();
-      await _dio.post('/posts/$postId/bookmark', options: options);
-    } catch (e) {
-      throw Exception("Failed to bookmark post: $e");
-    }
+    // Currently no "Save Post" endpoint in the provided feed.py
+    // You might need to add one or use a different endpoint if available.
   }
 
   Future<void> toggleFollow(String postId) async {
-    try {
-      final options = await _getOptions();
-      // Assuming you follow the AUTHOR of the post
-      await _dio.post('/posts/$postId/follow_author', options: options);
-    } catch (e) {
-      throw Exception("Failed to follow user: $e");
-    }
+    // Logic usually requires Author ID, which we'd get from the UI layer
+    // Endpoint: /connections/follow/{user_id} (from connections.py)
+    // To implement this properly, we need the user_id, not just post_id
   }
 
   Future<void> incrementCommentCount(String postId) async {
-    // Usually handled by the backend automatically when a comment is added.
-    // We can leave this empty or remove it if the UI updates optimistically.
+    // Handled by backend response
   }
 
   // --- COMMENTS ---
@@ -116,39 +130,19 @@ class FeedRepository {
   Future<List<Comment>> fetchComments(String postId) async {
     try {
       final options = await _getOptions();
-      final response = await _dio.get('/posts/$postId/comments', options: options);
+      // Endpoint: /feed/posts/{id}/comments
+      final response = await _dio.get(
+        '/feed/posts/$postId/comments',
+        queryParameters: {'page': 1, 'limit': 20},
+        options: options,
+      );
 
-      return (response.data as List)
-          .map((json) => Comment.fromJson(json))
-          .toList();
+      // FIX: Access the "comments" key first!
+      final List list = response.data['comments'];
+
+      return list.map((json) => Comment.fromJson(json)).toList();
     } catch (e) {
-      // Return empty list on error or handle differently
-      return [];
-    }
-  }
-
-  Future<List<Comment>> fetchReplies(String commentId) async {
-    try {
-      final options = await _getOptions();
-      final response = await _dio.get('/comments/$commentId/replies', options: options);
-
-      return (response.data as List)
-          .map((json) => Comment.fromJson(json))
-          .toList();
-    } catch (e) {
-      return [];
-    }
-  }
-
-  Future<List<Comment>> fetchRepliesByUser(String userId) async {
-    try {
-      final options = await _getOptions();
-      final response = await _dio.get('/users/$userId/replies', options: options);
-
-      return (response.data as List)
-          .map((json) => Comment.fromJson(json))
-          .toList();
-    } catch (e) {
+      print("Fetch Comments Error: $e");
       return [];
     }
   }
@@ -156,11 +150,14 @@ class FeedRepository {
   Future<Comment> addComment(String postId, String content, String parentId, User author) async {
     try {
       final options = await _getOptions();
-      // parentId "0" means top-level comment
-      final response = await _dio.post('/posts/$postId/comments', data: {
-        'content': content,
-        'parent_comment_id': parentId == "0" ? null : parentId,
-      }, options: options);
+
+      // Match 'CommentCreate' schema
+      final data = {
+        'commentContent': content,
+        'parentCommentID': (parentId == "0" || parentId.isEmpty) ? null : int.parse(parentId)
+      };
+
+      final response = await _dio.post('/feed/posts/$postId/comments', data: data, options: options);
 
       return Comment.fromJson(response.data);
     } catch (e) {
@@ -168,21 +165,9 @@ class FeedRepository {
     }
   }
 
-  Future<void> toggleCommentLike(String commentId) async {
-    try {
-      final options = await _getOptions();
-      await _dio.post('/comments/$commentId/like', options: options);
-    } catch (e) {
-      throw Exception("Failed to like comment: $e");
-    }
-  }
-
-  Future<void> toggleCommentBookmark(String commentId) async {
-    try {
-      final options = await _getOptions();
-      await _dio.post('/comments/$commentId/bookmark', options: options);
-    } catch (e) {
-      throw Exception("Failed to bookmark comment: $e");
-    }
-  }
+  // Stub methods for replies (backend treats replies same as comments, just with parentID)
+  Future<List<Comment>> fetchReplies(String commentId) async { return []; }
+  Future<List<Comment>> fetchRepliesByUser(String userId) async { return []; }
+  Future<void> toggleCommentLike(String commentId) async {}
+  Future<void> toggleCommentBookmark(String commentId) async {}
 }

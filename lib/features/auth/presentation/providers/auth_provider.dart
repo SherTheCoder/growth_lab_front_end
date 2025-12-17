@@ -3,8 +3,8 @@ import 'package:growth_lab/core/models/user_model.dart';
 
 
 // Uncomment real ones when testing with real backend
-// import '../../data/auth_repository.dart';
-import '../../data/mock_auth_repo.dart';
+import '../../data/auth_repository.dart';
+// import '../../data/mock_auth_repo.dart';
 
 
 final authRepositoryProvider = Provider((ref) => AuthRepository());

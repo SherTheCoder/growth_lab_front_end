@@ -22,83 +22,123 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
   final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
 
+  // Form Keys for validation (Optional but good practice)
+  final _step1Key = GlobalKey<FormState>();
+  final _step2Key = GlobalKey<FormState>();
+
   void _nextStep() {
     if (_firstNameController.text.isNotEmpty && _lastNameController.text.isNotEmpty) {
-      _pageController.nextPage(duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
+      _pageController.nextPage(
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut
+      );
+      FocusScope.of(context).unfocus(); // Close keyboard on transition
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please fill in all fields")),
+      );
     }
   }
 
   void _submitSignUp() async {
-    // 1. Trigger the signup (this sets state to loading)
+    // Basic validation
+    if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please fill in email and password")),
+      );
+      return;
+    }
+
+    // 1. Trigger the signup
     await ref.read(authProvider.notifier).signUp(
-      firstName: _firstNameController.text,
-      lastName: _lastNameController.text,
-      email: _emailController.text,
-      phone: _phoneController.text,
+      firstName: _firstNameController.text.trim(),
+      lastName: _lastNameController.text.trim(),
+      email: _emailController.text.trim(),
+      phone: _phoneController.text.trim(),
       password: _passwordController.text,
     );
 
     // 2. Check the result
+    if (!mounted) return;
     final authState = ref.read(authProvider);
 
     if (authState.hasError) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Error: ${authState.error}")),
-        );
-      }
+      final errorMsg = authState.error.toString().replaceAll("Exception: ", "");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(errorMsg, style: const TextStyle(color: Colors.white)),
+          backgroundColor: Colors.red,
+        ),
+      );
     } else {
-      // 3. Success: Show confirmation and go back to login
-      if (mounted) {
-        showDialog(
-          context: context,
-          builder: (ctx) => AlertDialog(
-            title: const Text("Account Created"),
-            content: const Text("Please check your email to verify your account before logging in."),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(ctx); // Close Dialog
-                  Navigator.popUntil(context, (route) => route.isFirst); // Go to Login
-                },
-                child: const Text("OK"),
-              )
-            ],
+      // 3. Success: Show confirmation dialog
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => AlertDialog(
+          backgroundColor: Theme.of(context).cardColor,
+          title: Text("Account Created", style: Theme.of(context).textTheme.titleLarge),
+          content: Text(
+            "Please check your email to verify your account before logging in.",
+            style: Theme.of(context).textTheme.bodyMedium,
           ),
-        );
-      }
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(ctx); // Close Dialog
+                Navigator.popUntil(context, (route) => route.isFirst); // Go to Login
+              },
+              child: Text("OK", style: TextStyle(color: Theme.of(context).colorScheme.primary)),
+            )
+          ],
+        ),
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        iconTheme: const IconThemeData(color: Colors.white),
+        backgroundColor: theme.scaffoldBackgroundColor,
         elevation: 0,
+        // Use theme icon color (Auto black/white based on mode)
+        iconTheme: IconThemeData(color: theme.iconTheme.color),
       ),
-      body: PageView(
-        controller: _pageController,
-        physics: const NeverScrollableScrollPhysics(), // Prevent swipe, enforce button click
-        children: [
-          _buildStep1(),
-          _buildStep2(),
-        ],
+      body: SafeArea(
+        child: PageView(
+          controller: _pageController,
+          physics: const NeverScrollableScrollPhysics(),
+          children: [
+            _buildStep1(theme),
+            _buildStep2(theme),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildStep1() {
+  Widget _buildStep1(ThemeData theme) {
     return Padding(
       padding: const EdgeInsets.all(24.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text("What's your full name?", style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold)),
+          Text(
+              "What's your full name?",
+              style: theme.textTheme.headlineMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: theme.textTheme.bodyLarge?.color // Dynamic Text Color
+              )
+          ),
           const SizedBox(height: 10),
-          const Text("Please enter the full name you use in your daily life.", style: TextStyle(color: Colors.grey)),
+          Text(
+              "Please enter the full name you use in your daily life.",
+              style: TextStyle(color: theme.hintColor)
+          ),
           const SizedBox(height: 40),
 
           Row(
@@ -108,7 +148,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
               Expanded(child: _buildTextField("Last Name", _lastNameController)),
             ],
           ),
-          const SizedBox(height: 40),
+          const Spacer(), // Pushes button to bottom area
 
           SizedBox(
             width: double.infinity,
@@ -116,26 +156,40 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
             child: ElevatedButton(
               onPressed: _nextStep,
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.white10,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+                backgroundColor: theme.colorScheme.primary, // Theme Primary Color
+                foregroundColor: theme.colorScheme.onPrimary, // Text on Primary
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), // Matches Login
               ),
-              child: const Text("Continue", style: TextStyle(color: Colors.white, fontSize: 16)),
+              child: const Text("Continue", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
             ),
           ),
+          const SizedBox(height: 20),
         ],
       ),
     );
   }
 
-  Widget _buildStep2() {
+  Widget _buildStep2(ThemeData theme) {
+    // Watch loading state to show spinner
+    final isLoading = ref.watch(authProvider).isLoading;
+
     return Padding(
       padding: const EdgeInsets.all(24.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text("Set Up Your Login Details", style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold)),
+          Text(
+              "Set Up Your Login Details",
+              style: theme.textTheme.headlineMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: theme.textTheme.bodyLarge?.color
+              )
+          ),
           const SizedBox(height: 10),
-          const Text("We'll send a verification link to your email.", style: TextStyle(color: Colors.grey)),
+          Text(
+              "We'll send a verification link to your email.",
+              style: TextStyle(color: theme.hintColor)
+          ),
           const SizedBox(height: 40),
 
           _buildTextField("Email", _emailController),
@@ -143,20 +197,25 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
           _buildTextField("Phone Number", _phoneController),
           const SizedBox(height: 20),
           _buildTextField("Password", _passwordController, isPassword: true),
-          const SizedBox(height: 40),
+
+          const Spacer(),
 
           SizedBox(
             width: double.infinity,
             height: 50,
             child: ElevatedButton(
-              onPressed: _submitSignUp,
+              onPressed: isLoading ? null : _submitSignUp,
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.white10,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+                backgroundColor: theme.colorScheme.primary,
+                foregroundColor: theme.colorScheme.onPrimary,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
-              child: const Text("Create Account", style: TextStyle(color: Colors.white, fontSize: 16)),
+              child: isLoading
+                  ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                  : const Text("Create Account", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
             ),
           ),
+          const SizedBox(height: 20),
         ],
       ),
     );

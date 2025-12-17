@@ -72,8 +72,8 @@ class AppTheme {
     // Card Theme (for Post Cards)
     cardTheme: CardTheme(
         color: _lightBackgroundColor,
-        elevation: 2,
-        shadowColor: Colors.black.withOpacity(0.05),
+        elevation: 8,
+        shadowColor: Colors.black.withOpacity(0.2),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
           side: BorderSide(

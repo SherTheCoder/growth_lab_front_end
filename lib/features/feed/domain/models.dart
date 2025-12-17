@@ -1,18 +1,7 @@
 import 'package:growth_lab/core/models/user_model.dart';
 
-/// Represents the type of content in a post
-enum PostContentType { text, image, carousel, video }
+enum PostContentType { text, image, video, document, carousel }
 
-/// Domain model for a User
-
-
-/// Domain model for a Feed Post
-// ... inside lib/features/feed/domain/models.dart
-
-// 1. Update PostContentType to handle String parsing if needed,
-// or you can handle it inside the Post.fromJson
-
-/// Domain model for a Feed Post
 class Post {
   final String id;
   final User author;
@@ -45,29 +34,42 @@ class Post {
   });
 
   factory Post.fromJson(Map<String, dynamic> json) {
+    // 1. Extract Attachments
+    List<String> urls = [];
+    PostContentType derivedType = PostContentType.text;
+
+    if (json['attachments'] != null && (json['attachments'] as List).isNotEmpty) {
+      final list = json['attachments'] as List;
+      final firstAtt = list.first;
+
+      // Determine type from backend "IMAGE", "VIDEO" strings
+      final typeStr = firstAtt['postAttachmentType']?.toString().toUpperCase() ?? 'DOCUMENT';
+      if (typeStr == 'IMAGE') derivedType = PostContentType.image;
+      else if (typeStr == 'VIDEO') derivedType = PostContentType.video;
+
+      // Extract URLs
+      urls = list.map((e) => e['postAttachmentUrl'].toString()).toList();
+    }
+
     return Post(
-      id: json['id'] as String,
-      // Ensure the 'author' field in JSON is a full user object, or adapt accordingly
-      author: User.fromJson(json['author'] as Map<String, dynamic>),
-      content: json['content'] as String,
-      // Simple parsing assuming backend sends "text", "image", etc.
-      type: PostContentType.values.firstWhere(
-              (e) => e.name == (json['type'] as String),
-          orElse: () => PostContentType.text
-      ),
-      mediaUrls: (json['media_urls'] as List<dynamic>?)?.map((e) => e as String).toList() ?? [],
-      timestamp: DateTime.parse(json['timestamp'] as String),
-      upvotes: json['upvotes'] ?? 0,
-      comments: json['comments'] ?? 0,
-      reposts: json['reposts'] ?? 0,
-      isLiked: json['is_liked'] ?? false,
-      isBookmarked: json['is_bookmarked'] ?? false,
-      isFollowing: json['is_following'] ?? false,
+      id: json['id']?.toString() ?? '',
+      author: User.fromJson(json['author'] ?? {}),
+      // Backend uses 'postContent'
+      content: json['postContent'] ?? '',
+      type: derivedType,
+      mediaUrls: urls,
+      timestamp: DateTime.tryParse(json['createdAt'] ?? '') ?? DateTime.now(),
+      // Backend uses 'likesCount', 'commentsCount'
+      upvotes: json['likesCount'] ?? 0,
+      comments: json['commentsCount'] ?? 0,
+      reposts: json['sharesCount'] ?? 0,
+      isLiked: json['isLiked'] ?? false,
+      isBookmarked: json['isSaved'] ?? false, // Backend uses 'isSaved'
+      isFollowing: false, // Not provided by backend yet, default to false
     );
   }
 
-  // Optional: toJson if you need to send a full post object back (rare for feeds)
-  // copyWith remains the same...
+  // copyWith remains the same (omitted for brevity)
   Post copyWith({
     String? id,
     User? author,
@@ -99,72 +101,83 @@ class Post {
   }
 }
 
-/// Domain model for a Comment
 class Comment {
   final String id;
-  final String postId;
   final User author;
   final String content;
-  final DateTime timestamp;
-
   final int upvotes;
   final int replyCount;
   final bool isLiked;
   final bool isBookmarked;
+  final String timestamp;
+  final String postId;
   final String parentCommentId;
+  final List<Comment> replies;
 
   const Comment({
     required this.id,
-    required this.postId,
     required this.author,
     required this.content,
-    required this.timestamp,
-    this.upvotes = 0,
-    this.replyCount = 0,
+    required this.upvotes,
+    required this.replyCount,
     this.isLiked = false,
     this.isBookmarked = false,
+    required this.timestamp,
+    required this.postId,
     this.parentCommentId = "0",
+    this.replies = const [],
   });
 
+  // 1. JSON Parsing (Maps API keys to Model keys)
   factory Comment.fromJson(Map<String, dynamic> json) {
+    var replyList = <Comment>[];
+    if (json['replies'] != null) {
+      replyList = (json['replies'] as List)
+          .map((r) => Comment.fromJson(r))
+          .toList();
+    }
+
     return Comment(
-      id: json['id'] as String,
-      postId: json['post_id'] as String,
-      author: User.fromJson(json['author'] as Map<String, dynamic>),
-      content: json['content'] as String,
-      timestamp: DateTime.parse(json['timestamp'] as String),
-      upvotes: json['upvotes'] ?? 0,
-      replyCount: json['reply_count'] ?? 0,
-      isLiked: json['is_liked'] ?? false,
-      isBookmarked: json['is_bookmarked'] ?? false,
-      parentCommentId: json['parent_comment_id']?.toString() ?? "0",
+      id: json['id']?.toString() ?? '',
+      author: User.fromJson(json['author'] ?? {}),
+      content: json['commentContent'] ?? '',         // Map commentContent
+      upvotes: json['commentLikeCount'] ?? 0,        // Map commentLikeCount
+      replyCount: replyList.length,
+      isLiked: json['isLiked'] ?? false,
+      isBookmarked: json['isSaved'] ?? false,
+      timestamp: json['createdAt'] ?? '',
+      postId: json['postID']?.toString() ?? '',
+      parentCommentId: json['parentCommentID']?.toString() ?? "0",
+      replies: replyList,
     );
   }
 
-  // copyWith remains the same...
+  // 2. CopyWith Method (For Immutable Updates)
   Comment copyWith({
     String? id,
-    String? postId,
     User? author,
     String? content,
-    DateTime? timestamp,
     int? upvotes,
     int? replyCount,
     bool? isLiked,
     bool? isBookmarked,
+    String? timestamp,
+    String? postId,
     String? parentCommentId,
+    List<Comment>? replies,
   }) {
     return Comment(
       id: id ?? this.id,
-      postId: postId ?? this.postId,
       author: author ?? this.author,
       content: content ?? this.content,
-      timestamp: timestamp ?? this.timestamp,
       upvotes: upvotes ?? this.upvotes,
       replyCount: replyCount ?? this.replyCount,
       isLiked: isLiked ?? this.isLiked,
       isBookmarked: isBookmarked ?? this.isBookmarked,
+      timestamp: timestamp ?? this.timestamp,
+      postId: postId ?? this.postId,
       parentCommentId: parentCommentId ?? this.parentCommentId,
+      replies: replies ?? this.replies,
     );
   }
 }

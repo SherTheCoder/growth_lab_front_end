@@ -1,5 +1,3 @@
-
-
 class User {
   final String id;
   final String name;
@@ -8,6 +6,12 @@ class User {
   final String headline;
   final String location;
   final bool isVerified;
+  // NEW FIELDS
+  final String bio;
+  final String websiteUrl;
+  final int totalConnections;
+  final int totalPosts;
+
   const User({
     required this.id,
     required this.name,
@@ -16,31 +20,30 @@ class User {
     required this.headline,
     required this.location,
     this.isVerified = false,
+    this.bio = '',
+    this.websiteUrl = '',
+    this.totalConnections = 0,
+    this.totalPosts = 0,
   });
 
-  // --- ADD THIS ---
   factory User.fromJson(Map<String, dynamic> json) {
+    final String first = json['firstName'] ?? '';
+    final String last = json['lastName'] ?? '';
+    final String fullName = '$first $last'.trim();
+
     return User(
-      id: json['id'] as String,
-      name: json['name'] as String,
-      username: json['username'] as String,
-      avatarUrl: json['avatar_url'] ?? '', // Handle nulls safely
+      id: json['id']?.toString() ?? '',
+      name: fullName.isNotEmpty ? fullName : 'User',
+      username: json['emailAddress'] != null ? "@${json['emailAddress'].split('@')[0]}" : '',
+      avatarUrl: json['avatarURL'] ?? '',
       headline: json['headline'] ?? '',
       location: json['location'] ?? '',
-      isVerified: json['is_verified'] ?? false,
+      isVerified: json['isVerified'] ?? false,
+      // MAPPING NEW FIELDS
+      bio: json['bio'] ?? '',
+      websiteUrl: json['websiteUrl'] ?? '',
+      totalConnections: json['totalConnections'] ?? 0,
+      totalPosts: json['totalPosts'] ?? 0,
     );
   }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'name': name,
-      'username': username,
-      'avatar_url': avatarUrl,
-      'headline': headline,
-      'location': location,
-      'is_verified': isVerified,
-    };
-  }
-
 }

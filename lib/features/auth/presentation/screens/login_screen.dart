@@ -15,32 +15,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
 
-  void _handleLogin() async {
-    // 1. Call the login method and await its completion
-    await ref.read(authProvider.notifier).login(
-      _emailController.text,
-      _passwordController.text,
-    );
-
-    // 2. Check if the widget is still mounted before using context
-    if (mounted) {
-      final authState = ref.read(authProvider);
-
-      // 3. If the state has an error, show a SnackBar
-      if (authState.hasError) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              // Clean up "Exception: " prefix if present
-              authState.error.toString().replaceAll('Exception: ', ''),
-              style: const TextStyle(color: Colors.white),
-            ),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
-  }
+  // 1. The key requires a Form widget to work
+  final _formKey = GlobalKey<FormState>();
 
   @override
   Widget build(BuildContext context) {
@@ -48,67 +24,119 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final authState = ref.watch(authProvider);
 
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(24.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 40),
-              const Center(
-                child: Icon(Icons.hub, size: 60, color: Colors.white), // Placeholder logo
-              ),
-              const SizedBox(height: 60),
-
-              // Email
-              AppTextField(controller: _emailController, label: "email or handle", isPassword: false),
-
-              const SizedBox(height: 20),
-
-              // Password
-              AppTextField(controller: _passwordController, label: "password", isPassword: true),
-
-              const SizedBox(height: 10),
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton(
-                    onPressed: () {},
-                    child: const Text("Forgot Password", style: TextStyle(color: Colors.grey))
+          // 2. Wrap your inputs in a FORM widget using the key
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 40),
+                Center(
+                  child: Icon(Icons.hub, size: 60, color: theme.iconTheme.color),
                 ),
-              ),
-              const SizedBox(height: 30),
+                const SizedBox(height: 60),
 
-              // Login Button
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton(
-                  onPressed: authState.isLoading ? null : _handleLogin,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white10,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
-                  ),
-                  child: authState.isLoading
-                      ? const CircularProgressIndicator(color: Colors.white)
-                      : const Text("Log in", style: TextStyle(color: Colors.white, fontSize: 16)),
+                // Email
+                AppTextField(
+                  controller: _emailController,
+                  label: "email or handle",
+                  isPassword: false,
+                  // Ensure your AppTextField supports validators, or add logic here
                 ),
-              ),
 
-              const Spacer(),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Text("Don't have an account? ", style: TextStyle(color: Colors.grey)),
-                  GestureDetector(
-                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SignUpScreen())),
-                    child: const Text("Sign up", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 20),
+
+                // Password
+                AppTextField(
+                    controller: _passwordController,
+                    label: "password",
+                    isPassword: true
+                ),
+
+                const SizedBox(height: 10),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                      onPressed: () {},
+                      child: Text("Forgot Password", style: TextStyle(color: theme.hintColor))
                   ),
-                ],
-              ),
-              const SizedBox(height: 20),
-              const Center(child: Text("Visit our homepage", style: TextStyle(color: Colors.grey, decoration: TextDecoration.underline))),
-            ],
+                ),
+                const SizedBox(height: 30),
+
+                // Login Button
+                SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: ElevatedButton(
+                    onPressed: authState.isLoading
+                        ? null // Disable button while loading
+                        : () async {
+                      // 3. Validate Form
+                      if (_formKey.currentState!.validate()) {
+                        try {
+                          // 4. Call Login (Await it!)
+                          await ref.read(authProvider.notifier).login(
+                              _emailController.text.trim(), // Trim whitespace
+                              _passwordController.text
+                          );
+
+                          // Navigation is usually handled by listening to authState changes
+                          // or typically: Navigator.pushReplacementNamed(context, '/feed');
+
+                        } catch (e) {
+                          // 5. Catch Error & Show SnackBar
+                          if (!mounted) return;
+
+                          final errorMessage = e.toString().replaceAll("Exception: ", "");
+
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(errorMessage, style: const TextStyle(color: Colors.white)),
+                              backgroundColor: Colors.red,
+                              behavior: SnackBarBehavior.floating,
+                            ),
+                          );
+                        }
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: theme.colorScheme.primary, // Teal
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    child: authState.isLoading
+                        ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)
+                    )
+                        : const Text("Log in", style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                  ),
+                ),
+
+                const Spacer(),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text("Don't have an account? ", style: TextStyle(color: theme.hintColor)),
+                    GestureDetector(
+                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SignUpScreen())),
+                      child: Text(
+                          "Sign up",
+                          style: TextStyle(
+                              color: theme.colorScheme.primary,
+                              fontWeight: FontWeight.bold
+                          )
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+              ],
+            ),
           ),
         ),
       ),

@@ -101,8 +101,9 @@ class FeedRepository {
       postId: postId,
       author: author,
       content: content,
-      timestamp: DateTime.now(),
-      parentCommentId: parentId,
+      timestamp: "12",
+      replyCount: 2,
+      parentCommentId: parentId, upvotes: 0,
     );
   }
   Future<void> toggleCommentLike(String commentId) async {}

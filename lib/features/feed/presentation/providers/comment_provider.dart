@@ -5,8 +5,8 @@ import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../profile/presentation/providers/profile_providers.dart';
 
 // Uncomment real repo when testing with backend
-// import '../../data/feed_repository.dart';
-import '../../data/mock_feed_repo.dart';
+import '../../data/feed_repository.dart';
+// import '../../data/mock_feed_repo.dart';
 
 class CommentNotifier extends StateNotifier<AsyncValue<List<Comment>>> {
   final FeedRepository _repository;
@@ -100,12 +100,11 @@ class CommentNotifier extends StateNotifier<AsyncValue<List<Comment>>> {
   }
 
   Future<void> toggleBookmark(String id) async {
+    // Optimistic Update ONLY (No backend call)
     _updateCommentLocally(id, (c) => c.copyWith(isBookmarked: !c.isBookmarked));
-    try {
-      await _repository.toggleCommentBookmark(id);
-    } catch (e) {
-      _updateCommentLocally(id, (c) => c.copyWith(isBookmarked: !c.isBookmarked));
-    }
+
+    // NOTE: When backend is ready, add the repo call here:
+    // try { await _repository.toggleCommentBookmark(id); } catch(e) { revert... }
   }
 
   void _updateCommentLocally(String id, Comment Function(Comment) transform) {

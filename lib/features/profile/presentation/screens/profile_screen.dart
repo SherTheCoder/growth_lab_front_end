@@ -91,7 +91,7 @@ class ProfileScreen extends ConsumerWidget {
                       children: [
                         Expanded(
                           // Uses the new OutlinedButtonTheme
-                          child: OutlinedButton(
+                          child: ElevatedButton(
                             onPressed: () {},
                             child: const Text("Edit profile"),
                           ),

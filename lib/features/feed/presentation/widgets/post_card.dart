@@ -111,7 +111,10 @@ class _PostCardState extends ConsumerState<PostCard> {
           const SizedBox(width: 8),
           _FollowButton(
             isFollowing: post.isFollowing,
-            onTap: () => ref.read(feedProvider.notifier).toggleFollow(post.id),
+            onTap: () {
+              // UPDATED: Use author.id for following user logic
+              ref.read(feedProvider.notifier).toggleFollow(post.author.id);
+            },
             theme: theme,
           ),
         ],
@@ -284,6 +287,14 @@ class _FollowButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final backgroundColor = isFollowing
+        ? Colors.transparent // Using new Flutter standard for "greyed out" element
+        : theme.colorScheme.primary;
+
+    final textColor = isFollowing
+        ? theme.textTheme.bodyMedium?.color
+        : theme.colorScheme.onPrimary;
+
     final color = isFollowing
         ? theme.textTheme.bodyLarge?.color
         : theme.colorScheme.primary;
@@ -294,7 +305,7 @@ class _FollowButton extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
         decoration: BoxDecoration(
-          color: isFollowing ? Colors.transparent : theme.colorScheme.primary.withOpacity(0.1),
+          color: backgroundColor,
           border: Border.all(
               color: isFollowing ? borderColor : (color ?? Colors.blue)),
           borderRadius: BorderRadius.circular(20),
@@ -302,7 +313,7 @@ class _FollowButton extends StatelessWidget {
         child: Text(
           isFollowing ? "Following" : "Follow",
           style: TextStyle(
-            color: isFollowing ? theme.textTheme.bodyMedium?.color : color,
+            color: textColor,
             fontSize: 12,
             fontWeight: FontWeight.w700,
           ),
