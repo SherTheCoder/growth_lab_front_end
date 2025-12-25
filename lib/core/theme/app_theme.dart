@@ -70,7 +70,7 @@ class AppTheme {
     ),
 
     // Card Theme (for Post Cards)
-    cardTheme: CardTheme(
+    cardTheme: CardThemeData(
         color: _lightBackgroundColor,
         elevation: 8,
         shadowColor: Colors.black.withOpacity(0.2),
@@ -94,7 +94,7 @@ class AppTheme {
         borderSide: BorderSide.none,
       ),
     ),
-    dialogTheme: DialogTheme(
+    dialogTheme: DialogThemeData(
       backgroundColor: _lightBackgroundColor, // or _darkSurfaceColor
       titleTextStyle: TextStyle(
           color: _lightTextColor, fontWeight: FontWeight.bold, fontSize: 20),
@@ -109,7 +109,7 @@ class AppTheme {
     ),
 
     // Tab Bar
-    tabBarTheme: const TabBarTheme(
+    tabBarTheme: const TabBarThemeData(
       labelColor: _primaryColor,
       unselectedLabelColor: _lightSubTextColor,
       indicatorColor: _primaryColor,
@@ -130,7 +130,7 @@ class AppTheme {
       iconTheme: IconThemeData(color: _darkTextColor),
     ),
     // ... inside darkTheme ...
-    dialogTheme: DialogTheme(
+    dialogTheme: DialogThemeData(
       backgroundColor: _lightBackgroundColor, // or _darkSurfaceColor
       titleTextStyle: TextStyle(
           color: _lightTextColor, fontWeight: FontWeight.bold, fontSize: 20),
@@ -169,7 +169,7 @@ class AppTheme {
     ),
 
     // Card Theme
-    cardTheme: CardTheme(
+    cardTheme: CardThemeData(
       color: _darkSurfaceColor,
       elevation: 0,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),

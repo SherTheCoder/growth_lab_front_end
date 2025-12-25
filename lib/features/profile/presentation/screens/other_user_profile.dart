@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:growth_lab/shared/presentation/widgets/user_avatar.dart';
+import '../../../../shared/presentation/screens/coming_soon_screen.dart';
 import '../../../chat/presentation/screens/chat_screen.dart';
 import 'package:growth_lab/core/models/user_model.dart';
 import '../../../feed/presentation/widgets/post_card.dart';
@@ -162,15 +163,24 @@ class OtherUserProfileScreen extends ConsumerWidget {
                                       final repo = ref.read(chatRepositoryProvider);
                                       final chatId = await repo.getOrCreateConversation(currentUser, user);
                                       if (context.mounted) {
+                                        // TODO: implement the messaging feature
                                         Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                                builder: (_) => ChatScreen(
-                                                    conversationId: chatId,
-                                                    otherUser: user
-                                                )
-                                            )
+                                          context,
+                                          MaterialPageRoute(builder: (_) => const ComingSoonScreen(
+                                            icon: Icons.message,
+                                            title: "Message Screen",
+                                            description: "We are working on it! Messaging will be available in the next update.",
+                                          )),
                                         );
+                                        // Navigator.push(
+                                        //     context,
+                                        //     MaterialPageRoute(
+                                        //         builder: (_) => ChatScreen(
+                                        //             conversationId: chatId,
+                                        //             otherUser: user
+                                        //         )
+                                        //     )
+                                        // );
                                       }
                                     },
                                     style: ElevatedButton.styleFrom(

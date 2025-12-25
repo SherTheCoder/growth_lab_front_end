@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:growth_lab/shared/presentation/widgets/user_avatar.dart';
+import '../../../../shared/presentation/screens/coming_soon_screen.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../feed/presentation/providers/feed_provider.dart';
 import '../../../feed/presentation/widgets/post_card.dart';
@@ -92,7 +93,18 @@ class ProfileScreen extends ConsumerWidget {
                         Expanded(
                           // Uses the new OutlinedButtonTheme
                           child: ElevatedButton(
-                            onPressed: () {},
+                            onPressed: () {
+                              // TODO: implement the messaging feature
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (_) => const ComingSoonScreen(
+                                  icon: Icons.edit,
+                                  title: "Edit Profile",
+                                  description: "Editing will be available in the next update. "
+                                      "Currently, you can edit your profile from our website",
+                                )),
+                              );
+                            },
                             child: const Text("Edit profile"),
                           ),
                         ),
