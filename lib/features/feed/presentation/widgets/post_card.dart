@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../shared/presentation/widgets/post_image_widget.dart';
 import '../../../profile/presentation/screens/other_user_profile.dart';
 import '../../domain/models.dart';
 import '../providers/feed_provider.dart';
@@ -160,32 +161,26 @@ class _PostCardState extends ConsumerState<PostCard> {
   }
 
   Widget _buildMedia(BuildContext context, Post post) {
-    if (post.type == PostContentType.carousel) {
+    if (post.mediaUrls.length > 1) {
       return SizedBox(
-        height: 250,
+        height: 300, // Fixed height for carousel to keep UI consistent
         child: PageView.builder(
           itemCount: post.mediaUrls.length,
           itemBuilder: (ctx, index) {
             return Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: Image.network(post.mediaUrls[index], fit: BoxFit.cover),
-              ),
+              child: PostImageWidget(imageUrl: post.mediaUrls[index]),
             );
           },
         ),
       );
-    } else if (post.type == PostContentType.image) {
+    } else if (post.mediaUrls.isNotEmpty) {
       return Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(12),
-          child: AspectRatio(
-            aspectRatio: 16 / 9,
-            child: Image.network(post.mediaUrls.first, fit: BoxFit.cover),
-          ),
-        ),
+        // We REMOVE the AspectRatio widget here.
+        // PostImageWidget already has a maxHeight constraint (450px)
+        // so it won't take up the whole screen, but it will respect natural shape.
+        child: PostImageWidget(imageUrl: post.mediaUrls.first),
       );
     }
     return const SizedBox.shrink();
@@ -200,9 +195,9 @@ class _PostCardState extends ConsumerState<PostCard> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween, // Better spacing
         children: [
           _ActionButton(
-            icon: Icons.change_history,
+            icon: post.isLiked ? Icons.favorite : Icons.favorite_border,
             label: post.upvotes.toString(),
-            color: post.isLiked ? theme.colorScheme.primary : iconColor,
+            color: post.isLiked ? Color(0xFFFF2D55) : iconColor,
             onTap: () => ref.read(feedProvider.notifier).toggleUpvote(post.id),
           ),
           _ActionButton(

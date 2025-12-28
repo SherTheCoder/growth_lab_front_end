@@ -36,8 +36,12 @@ String getUserFriendlyErrorMessage(Object error) {
         return "Please check your input details and try again.";
       }
 
+      if (response.statusCode == 413) return "The image is too large to upload. Please choose a smaller one.";
+
+
       // Handle other specific codes...
       if (response.statusCode == 400) return "This account already exists. Please log in.";
+
       if (response.statusCode == 409) return "This account already exists. Please log in.";
       if (response.statusCode == 401) return "Incorrect email or password.";
       if (response.statusCode == 403) return "Access denied.";

@@ -254,11 +254,10 @@ class CommentItem extends ConsumerWidget {
                       },
                       child: SmallAction(
                         icon: comment.isLiked
-                            ? Icons.change_history
-                            : Icons.change_history,
+                            ? Icons.favorite : Icons.favorite_border,
                         label: "${comment.upvotes}",
                         theme: theme,
-                        color: comment.isLiked ? Colors.blue : Colors.grey,
+                        color: comment.isLiked ? const Color(0xFFFF2D55) : Colors.grey,
                       ),
                     ),
                     const SizedBox(width: 24),

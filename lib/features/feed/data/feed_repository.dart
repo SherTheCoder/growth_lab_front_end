@@ -76,27 +76,59 @@ class FeedRepository {
   }
 
   Future<String> uploadMedia(File file) async {
-    if (kIsWeb) {
-      throw Exception("Web upload not implemented yet (requires bytes/XFile)");
-    }
-
     try {
-      final options = await _getOptions();
       String fileName = file.path.split('/').last;
 
+      // 1. Get Auth Headers (Critical: Server needs to know WHO is uploading)
+      final options = await _getOptions();
+
       FormData formData = FormData.fromMap({
-        "file": await MultipartFile.fromFile(file.path, filename: fileName),
+        "file": await MultipartFile.fromFile(
+          file.path,
+          filename: fileName,
+        ),
       });
 
-      // Endpoint: /feed/upload
-      final response = await _dio.post('/feed/upload', data: formData, options: options);
+      // 2. Use the CORRECT path from Swagger
+      final response = await _dio.post(
+        '/feed/upload', // <--- FIXED HERE
+        data: formData,
+        options: options,      // <--- Added Auth Token
+      );
 
-      // Backend returns { "url": "/uploads/posts/..." }
-      return response.data['url'];
+      // 3. Handle the response URL
+      String relativePath = response.data['url']?.toString() ?? "";
+
+      if (relativePath.isEmpty) {
+        throw Exception("Server returned empty URL");
+      }
+
+      const String domain = "https://api.growthlab.sg";
+      String fullUrl;
+
+      if (relativePath.startsWith('http')) {
+        fullUrl = relativePath;
+      } else {
+        // Ensure we don't double-slash
+        if (relativePath.startsWith('/')) {
+          fullUrl = "$domain$relativePath";
+        } else {
+          fullUrl = "$domain/$relativePath";
+        }
+      }
+
+      print("✅ Image Ready: $fullUrl");
+      return fullUrl;
+
+    } on DioException catch (e) {
+      // Helpful debug print if it fails again
+      print("❌ Upload Error (${e.response?.statusCode}): ${e.requestOptions.uri}");
+      throw Exception("Image upload failed: ${e.response?.statusMessage ?? e.message}");
     } catch (e) {
-      throw Exception("Failed to upload media: $e");
+      throw Exception("Image upload failed: $e");
     }
   }
+
 
   // --- INTERACTIONS ---
 

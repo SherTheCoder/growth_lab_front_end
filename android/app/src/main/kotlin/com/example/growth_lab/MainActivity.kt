@@ -1,6 +1,6 @@
 package com.growthlab.app
 
-import io.flutter.embedding.android.FlutterActivityter
+import io.flutter.embedding.android.FlutterActivity
 
 
 class MainActivity: FlutterActivity()
