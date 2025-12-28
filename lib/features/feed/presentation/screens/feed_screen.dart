@@ -2,6 +2,7 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:growth_lab/shared/presentation/widgets/safe_scaffold.dart';
 import '../../../../core/theme/theme_provider.dart';
 import '../providers/feed_provider.dart';
 import '../widgets/growth_lab_title.dart';
@@ -31,7 +32,7 @@ class _FeedScreenState extends ConsumerState<FeedScreen>
     final theme = Theme.of(context);
     final themeMode = ref.watch(themeProvider);
 
-    return Scaffold(
+    return SafeScaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       body: NestedScrollView(
         headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {

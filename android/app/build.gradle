@@ -31,7 +31,7 @@ if (flutterVersionName == null) {
 
 
 android {
-    namespace = "com.example.growth_lab"
+    namespace = "com.growthlab.app"
     compileSdk = flutter.compileSdkVersion
 
     signingConfigs {
@@ -44,7 +44,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.growth_lab"
+        applicationId = "com.growthlab.app"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode flutterVersionCode.toInteger()

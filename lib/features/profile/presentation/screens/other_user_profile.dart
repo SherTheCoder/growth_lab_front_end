@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:growth_lab/shared/presentation/widgets/safe_scaffold.dart';
 import 'package:growth_lab/shared/presentation/widgets/user_avatar.dart';
 import '../../../../shared/presentation/screens/coming_soon_screen.dart';
 import '../../../chat/presentation/screens/chat_screen.dart';
@@ -34,7 +35,7 @@ class OtherUserProfileScreen extends ConsumerWidget {
 
     return DefaultTabController(
       length: 2,
-      child: Scaffold(
+      child: SafeScaffold(
         backgroundColor: theme.scaffoldBackgroundColor,
         body: NestedScrollView(
           headerSliverBuilder: (context, innerBoxIsScrolled) {
